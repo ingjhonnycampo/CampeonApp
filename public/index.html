@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campeonato App — Panel</title>
+<style>
+  :root{
+    --bg:#f6f7f3; --surface:#fff; --ink:#101d16; --muted:#5b6b62;
+    --line:#dde3d8; --accent:#1f7a4d; --accent-strong:#124a2f; --accent-soft:#e4f0e8;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--ink);margin:0;padding:32px 16px;}
+  .wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:24px;}
+  h1{font-size:1.6rem;margin:0;}
+  p.sub{color:var(--muted);margin:4px 0 0;}
+  section{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;}
+  h2{font-size:1.1rem;margin:0 0 14px;}
+  form{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  form.single{grid-template-columns:1fr;}
+  label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--muted);}
+  input,select{padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:.9rem;}
+  button{grid-column:1/-1;padding:10px;border:none;border-radius:6px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer;}
+  button:hover{background:var(--accent-strong);}
+  .list{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+  .item{display:flex;justify-content:space-between;padding:8px 10px;background:var(--accent-soft);border-radius:6px;font-size:.88rem;cursor:pointer;}
+  .item.active{outline:2px solid var(--accent);}
+  .empty{color:var(--muted);font-size:.85rem;}
+  select#equipoSelect, select#torneoParaEquipo{width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div>
+    <h1>Campeonato App</h1>
+    <p class="sub">Panel de prueba — crear campeonato, equipos y jugadores</p>
+  </div>
+
+  <section>
+    <h2>1. Crear campeonato</h2>
+    <form id="formTorneo">
+      <label>Nombre <input name="nombre" required placeholder="Liga del Barrio 2026"></label>
+      <label>Modalidad
+        <select name="modalidad" required>
+          <option value="futbol">Fútbol</option>
+          <option value="microfutbol">Microfútbol</option>
+        </select>
+      </label>
+      <label>Duración tiempo 1 (min) <input name="duracion_tiempo_1" type="number" value="45"></label>
+      <label>Duración tiempo 2 (min) <input name="duracion_tiempo_2" type="number" value="45"></label>
+      <button type="submit">Crear campeonato</button>
+    </form>
+    <div class="list" id="listaTorneos"></div>
+  </section>
+
+  <section>
+    <h2>2. Agregar equipo</h2>
+    <form id="formEquipo" class="single">
+      <label>Campeonato
+        <select id="torneoParaEquipo" required></select>
+      </label>
+      <label>Nombre del equipo <input name="nombre" required placeholder="Los Halcones"></label>
+      <label>Delegado <input name="delegado" placeholder="Nombre del delegado"></label>
+      <button type="submit">Agregar equipo</button>
+    </form>
+    <div class="list" id="listaEquipos"></div>
+  </section>
+
+  <section>
+    <h2>3. Agregar jugador</h2>
+    <form id="formJugador" class="single">
+      <label>Equipo
+        <select id="equipoSelect" required></select>
+      </label>
+      <label>Nombre <input name="nombre" required placeholder="Juan Pérez"></label>
+      <label>Número de camiseta <input name="numero_camiseta" type="number"></label>
+      <button type="submit">Agregar jugador</button>
+    </form>
+    <div class="list" id="listaJugadores"></div>
+  </section>
+</div>
+
+<script>
+const api = (path, opts) => fetch('/api' + path, {
+  headers: { 'Content-Type': 'application/json' },
+  ...opts
+}).then(async r => {
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || 'Error');
+  return data;
+});
+
+let torneoActivo = null;
+let equipoActivo = null;
+
+async function cargarTorneos() {
+  const torneos = await api('/torneos');
+  const lista = document.getElementById('listaTorneos');
+  const select = document.getElementById('torneoParaEquipo');
+  lista.innerHTML = torneos.length ? '' : '<span class="empty">Sin campeonatos todavía.</span>';
+  select.innerHTML = torneos.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+
+  torneos.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'item' + (torneoActivo === t.id ? ' active' : '');
+    div.textContent = `${t.nombre} — ${t.modalidad} (${t.duracion_tiempo_1}'+${t.duracion_tiempo_2}')`;
+    div.onclick = () => { torneoActivo = t.id; select.value = t.id; cargarTorneos(); };
+    lista.appendChild(div);
+  });
+
+  if (!torneoActivo && torneos[0]) torneoActivo = torneos[0].id;
+  if (torneoActivo) { select.value = torneoActivo; await cargarEquipos(torneoActivo); }
+}
+
+async function cargarEquipos(torneoId) {
+  const equipos = await api('/equipos?torneo_id=' + torneoId);
+  const lista = document.getElementById('listaEquipos');
+  const select = document.getElementById('equipoSelect');
+  lista.innerHTML = equipos.length ? '' : '<span class="empty">Sin equipos en este campeonato.</span>';
+  select.innerHTML = equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+
+  equipos.forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'item' + (equipoActivo === e.id ? ' active' : '');
+    div.textContent = e.nombre + (e.delegado ? ` — delegado: ${e.delegado}` : '');
+    div.onclick = () => { equipoActivo = e.id; select.value = e.id; cargarEquipos(torneoId); };
+    lista.appendChild(div);
+  });
+
+  if (!equipoActivo && equipos[0]) equipoActivo = equipos[0].id;
+  if (equipoActivo) { select.value = equipoActivo; await cargarJugadores(equipoActivo); }
+}
+
+async function cargarJugadores(equipoId) {
+  const jugadores = await api('/jugadores?equipo_id=' + equipoId);
+  const lista = document.getElementById('listaJugadores');
+  lista.innerHTML = jugadores.length ? '' : '<span class="empty">Sin jugadores en este equipo.</span>';
+  jugadores.forEach(j => {
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.textContent = `#${j.numero_camiseta ?? '-'} ${j.nombre}`;
+    lista.appendChild(div);
+  });
+}
+
+document.getElementById('formTorneo').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  await api('/torneos', { method: 'POST', body: JSON.stringify(Object.fromEntries(fd)) });
+  e.target.reset();
+  torneoActivo = null;
+  await cargarTorneos();
+});
+
+document.getElementById('formEquipo').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = Object.fromEntries(new FormData(e.target));
+  fd.torneo_id = document.getElementById('torneoParaEquipo').value;
+  await api('/equipos', { method: 'POST', body: JSON.stringify(fd) });
+  e.target.reset();
+  equipoActivo = null;
+  await cargarEquipos(fd.torneo_id);
+});
+
+document.getElementById('formJugador').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = Object.fromEntries(new FormData(e.target));
+  fd.equipo_id = document.getElementById('equipoSelect').value;
+  await api('/jugadores', { method: 'POST', body: JSON.stringify(fd) });
+  e.target.reset();
+  await cargarJugadores(fd.equipo_id);
+});
+
+document.getElementById('torneoParaEquipo').addEventListener('change', (e) => {
+  torneoActivo = Number(e.target.value);
+  equipoActivo = null;
+  cargarEquipos(torneoActivo);
+});
+
+document.getElementById('equipoSelect').addEventListener('change', (e) => {
+  equipoActivo = Number(e.target.value);
+  cargarJugadores(equipoActivo);
+});
+
+cargarTorneos();
+</script>
+</body>
+</html>
