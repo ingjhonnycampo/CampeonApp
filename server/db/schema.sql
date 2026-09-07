@@ -1,6 +1,17 @@
 -- Esquema inicial: torneos, equipos, jugadores
 -- Se ejecuta una vez en la base de datos de Supabase (SQL Editor -> pegar y correr)
 
+-- Ajustes globales de la plataforma (una sola fila). Hoy solo trae el interruptor
+-- de la transmisión en vivo — antes era una constante en el código del frontend
+-- (features.js), ahora lo puede prender/apagar el admin desde el panel sin tocar
+-- código ni redesplegar.
+CREATE TABLE IF NOT EXISTS configuracion_global (
+  id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  transmision_habilitada BOOLEAN NOT NULL DEFAULT false
+);
+INSERT INTO configuracion_global (id, transmision_habilitada) VALUES (1, false) ON CONFLICT (id) DO NOTHING;
+ALTER TABLE configuracion_global ENABLE ROW LEVEL SECURITY;
+
 CREATE TABLE IF NOT EXISTS torneos (
   id SERIAL PRIMARY KEY,
   nombre TEXT NOT NULL,

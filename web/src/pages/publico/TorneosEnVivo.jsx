@@ -61,8 +61,13 @@ export default function TorneosEnVivo() {
       // Los partidos de un torneo ya finalizado no aparecen en este hub (su
       // historial completo vive en la página propia del torneo), así que ni
       // siquiera hace falta pedirlos acá — importa a medida que se acumulan
-      // campeonatos con el tiempo.
-      const activos = listaTorneos.filter((t) => t.estado !== 'finalizado');
+      // campeonatos con el tiempo. Excepción: si se finalizó justo HOY (ej. se
+      // jugó la final), sus partidos de hoy se siguen pidiendo para que el
+      // último partido no desaparezca de este hub antes de que cambie el día.
+      const hoyStr = new Date().toDateString();
+      const activos = listaTorneos.filter((t) =>
+        t.estado !== 'finalizado' || (t.fecha_finalizado && new Date(t.fecha_finalizado).toDateString() === hoyStr)
+      );
       const porTorneo = await Promise.all(activos.map(cargarPartidosDe));
       if (!activo) return;
       const todos = porTorneo.flat();

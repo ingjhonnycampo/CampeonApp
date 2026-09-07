@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useModal } from '../../context/ModalContext';
 import CuadroBracket from '../../components/CuadroBracket';
-import { TRANSMISION_EN_VIVO_HABILITADA } from '../../lib/features';
+import { useConfiguracion } from '../../context/ConfiguracionContext';
 
 // Estos componentes muestran una fase de grupos o de eliminatoria ya generada por
 // el asistente único de "Generar fixture" (ver ConfiguradorFixture). Ya no se crean
@@ -536,6 +536,7 @@ function fechaParaInput(fechaUtc) {
 
 export function PartidoFila({ partido, hermano, onGuardado, eliminatoria }) {
   const modal = useModal();
+  const { transmisionHabilitada } = useConfiguracion();
   const [golesLocal, setGolesLocal] = useState(partido.goles_local ?? '');
   const [golesVisitante, setGolesVisitante] = useState(partido.goles_visitante ?? '');
   const [guardando, setGuardando] = useState(false);
@@ -810,13 +811,13 @@ export function PartidoFila({ partido, hermano, onGuardado, eliminatoria }) {
         </div>
       )}
 
-      {TRANSMISION_EN_VIVO_HABILITADA && (
+      {transmisionHabilitada && (
         <div className="admin-partido-horario">
           {editandoTransmision ? (
             <>
               <input
                 type="url"
-                placeholder="Enlace de YouTube Live o Facebook Live de este partido"
+                placeholder="Enlace de YouTube Live, Facebook Live o Twitch (twitch.tv/tucanal) de este partido"
                 value={transmision}
                 onChange={(e) => setTransmision(e.target.value)}
               />

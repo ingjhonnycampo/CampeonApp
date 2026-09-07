@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import LineaTiempoPartido from './LineaTiempoPartido';
 import RelojConAdicion from './RelojConAdicion';
-import { TRANSMISION_EN_VIVO_HABILITADA } from '../lib/features';
+import { useConfiguracion } from '../context/ConfiguracionContext';
 import { urlEmbebible } from '../lib/embedVideo';
 
 const ICONO_TARJETA = { amarilla: '🟨', roja: '🟥', azul: '🟦' };
@@ -41,6 +41,7 @@ function EscudoEquipo({ url, nombre }) {
 export default function FilaPartidoPublico({ partido, abierto, onAbrir, fijado, onFijar, torneoNombre, torneoLogo, onEvento }) {
   const totalSeg = useRelojEnVivo(partido);
   const enVivo = partido.estado === 'en_curso';
+  const { transmisionHabilitada } = useConfiguracion();
   const [detalle, setDetalle] = useState(null);
   const vistosRef = useRef(null);
 
@@ -96,7 +97,7 @@ export default function FilaPartidoPublico({ partido, abierto, onAbrir, fijado, 
             {partido.contexto} · J{partido.jornada}
           </span>
           <span className={enVivo ? 'publico-lista-partido-chip publico-lista-partido-chip--vivo' : 'publico-lista-partido-chip'}>
-            {TRANSMISION_EN_VIVO_HABILITADA && enVivo && partido.url_transmision && <span className="publico-lista-partido-tv">📺 </span>}
+            {transmisionHabilitada && enVivo && partido.url_transmision && <span className="publico-lista-partido-tv">📺 </span>}
             {enVivo && (
               <>
                 ● {ETIQUETA_TIEMPO[partido.tiempo_actual] || 'En vivo'}{' '}
@@ -130,8 +131,10 @@ export default function FilaPartidoPublico({ partido, abierto, onAbrir, fijado, 
       </button>
       {abierto && detalle && (
         <div className="publico-lista-partido-detalle">
-          {TRANSMISION_EN_VIVO_HABILITADA && detalle.partido.url_transmision && (
-            urlEmbebible(detalle.partido.url_transmision) ? (
+          {transmisionHabilitada && detalle.partido.url_transmision && (
+            detalle.partido.estado === 'jugado' ? (
+              <p className="publico-lista-partido-transmision-finalizada">📴 La transmisión de este partido ha finalizado.</p>
+            ) : urlEmbebible(detalle.partido.url_transmision) ? (
               <div className="publico-lista-partido-transmision">
                 <iframe
                   src={urlEmbebible(detalle.partido.url_transmision)}

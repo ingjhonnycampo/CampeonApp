@@ -15,5 +15,18 @@ export function urlEmbebible(url) {
     return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(limpio)}&autoplay=true`;
   }
 
+  // Twitch: a diferencia de YouTube/Facebook, el enlace del canal es siempre el
+  // mismo (twitch.tv/usuario) — no hace falta generar uno nuevo por partido, solo
+  // reusar el del canal. Requiere el parámetro "parent" con el dominio real desde
+  // donde se embebe (exigencia de Twitch, no es opcional) — se toma solo.
+  const twitchVideo = limpio.match(/twitch\.tv\/videos\/(\d+)/);
+  if (twitchVideo) {
+    return `https://player.twitch.tv/?video=${twitchVideo[1]}&parent=${window.location.hostname}&autoplay=true&muted=true`;
+  }
+  const twitchCanal = limpio.match(/twitch\.tv\/([a-zA-Z0-9_]{3,25})(?:$|[/?])/);
+  if (twitchCanal && !['videos', 'clip', 'directory', 'settings'].includes(twitchCanal[1])) {
+    return `https://player.twitch.tv/?channel=${twitchCanal[1]}&parent=${window.location.hostname}&autoplay=true&muted=true`;
+  }
+
   return null;
 }

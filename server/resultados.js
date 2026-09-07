@@ -71,7 +71,9 @@ async function guardarResultadoFinal(pool, { partidoId, golesLocal, golesVisitan
   }
 
   const { rows } = await pool.query(
-    `UPDATE partidos SET goles_local = $1, goles_visitante = $2, estado = 'jugado', ganador_id = $3, penales_local = $4, penales_visitante = $5 WHERE id = $6 RETURNING *`,
+    `UPDATE partidos SET goles_local = $1, goles_visitante = $2, estado = 'jugado', ganador_id = $3, penales_local = $4, penales_visitante = $5,
+            jugado_hasta = COALESCE(jugado_hasta, now())
+     WHERE id = $6 RETURNING *`,
     [golesLocal, golesVisitante, ganadorFinal, penalesLocalFinal, penalesVisitanteFinal, partidoId]
   );
   const partido = rows[0];

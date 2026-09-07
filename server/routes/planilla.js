@@ -550,12 +550,7 @@ router.post('/:id/finalizar', requireAuth, requireAccesoTorneo((req) => obtenerT
   });
   if (resultado.error) return res.status(resultado.status).json({ error: resultado.error });
 
-  const { rows: conHora } = await pool.query(
-    `UPDATE partidos SET jugado_hasta = now() WHERE id = $1 RETURNING *`,
-    [req.params.id]
-  );
-
-  res.json({ ...conHora[0], aviso_clasificacion: resultado.avisoClasificacion });
+  res.json({ ...resultado.partido, aviso_clasificacion: resultado.avisoClasificacion });
 }));
 
 // Firma del arbitro/anotador que cierra la planilla, para el informe imprimible.

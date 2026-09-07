@@ -1209,6 +1209,7 @@ h1, h2, h3 {
 
 @media print {
   .no-imprimir { display: none !important; }
+  .instalarapp-banner { display: none !important; }
   .imprimir-page { padding: 0; max-width: none; }
   body { background: #fff; }
   .imprimir-salto-pagina { break-before: page; page-break-before: always; }
@@ -3355,6 +3356,18 @@ h1, h2, h3 {
   text-decoration: none;
 }
 
+.publico-lista-partido-transmision-finalizada {
+  text-align: center;
+  margin: 8px 0;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
 .publico-lista-partido-fijar {
   display: block;
   margin: 8px auto 0;
@@ -3542,5 +3555,106 @@ h1, h2, h3 {
 
 @keyframes publico-pitido-entra {
   from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.instalarapp-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  margin-inline: auto;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: min(94vw, 480px);
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  animation: instalarapp-entra 0.3s ease-out;
+}
+
+.instalarapp-icono {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.instalarapp-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.instalarapp-texto strong {
+  display: block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.05rem;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+
+.instalarapp-texto p {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  line-height: 1.3;
+}
+
+.instalarapp-icono-compartir {
+  display: inline-block;
+}
+
+.instalarapp-acciones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.instalarapp-btn-instalar {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: #fff;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.instalarapp-btn-instalar:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.instalarapp-btn-cerrar {
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 6px;
+}
+
+@media (max-width: 480px) {
+  .instalarapp-banner {
+    bottom: 0;
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+  }
+}
+
+@keyframes instalarapp-entra {
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }

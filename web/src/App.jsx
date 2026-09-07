@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ModalProvider } from './context/ModalContext';
+import { ConfiguracionProvider } from './context/ConfiguracionContext';
+import InstalarApp from './components/InstalarApp';
 import RutaProtegida from './components/RutaProtegida';
 import CargaJugador from './components/CargaJugador';
 import Login from './pages/Login';
@@ -37,8 +39,9 @@ export default function App() {
   return (
     <ModalProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
+        <ConfiguracionProvider>
+          <BrowserRouter>
+            <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/inscripcion/:slug" element={<InscripcionPublica />} />
             <Route path="/mi-inscripcion" element={<MiInscripcion />} />
@@ -61,8 +64,10 @@ export default function App() {
             <Route path="/arbitro/informe/:partidoId" element={<RutaProtegida roles={['admin', 'organizador', 'arbitro']}><ImprimirInformePartido /></RutaProtegida>} />
             <Route path="/delegado" element={<RutaProtegida roles={['delegado']}><DashboardPlaceholder /></RutaProtegida>} />
             <Route path="/" element={<Inicio />} />
-          </Routes>
-        </BrowserRouter>
+            </Routes>
+            <InstalarApp />
+          </BrowserRouter>
+        </ConfiguracionProvider>
       </AuthProvider>
     </ModalProvider>
   );

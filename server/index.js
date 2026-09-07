@@ -30,6 +30,7 @@ const fasesRouter = require('./routes/fases');
 const bitacoraRouter = require('./routes/bitacora');
 const planillaRouter = require('./routes/planilla');
 const sancionesRouter = require('./routes/sanciones');
+const configuracionRouter = require('./routes/configuracion');
 
 const app = express();
 const server = http.createServer(app);
@@ -58,6 +59,7 @@ app.use('/api/fases', fasesRouter);
 app.use('/api/bitacora', bitacoraRouter);
 app.use('/api/planilla', planillaRouter);
 app.use('/api/sanciones', sancionesRouter);
+app.use('/api/configuracion', configuracionRouter);
 
 io.on('connection', (socket) => {
   console.log('Cliente conectado:', socket.id);

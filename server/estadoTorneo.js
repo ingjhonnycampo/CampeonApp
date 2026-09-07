@@ -16,7 +16,11 @@ async function estadoFinalizacion(pool, torneo) {
       [fasesElim[0].id]
     );
     const final = rows[0];
-    return { finalizado: final?.estado === 'jugado', fechaFin: final?.estado === 'jugado' ? final.creado_en : null };
+    // jugado_hasta es la fecha real en que se cerró el partido (o, para datos
+    // viejos de antes de que existiera esa columna, cae en creado_en) — NUNCA
+    // creado_en solo, porque esa es la fecha en que se generó el fixture, no la
+    // que se jugó de verdad (podrían ser semanas de diferencia).
+    return { finalizado: final?.estado === 'jugado', fechaFin: final?.estado === 'jugado' ? (final.jugado_hasta || final.creado_en) : null };
   }
 
   const condicionFase = torneo.formato === 'grupos'
@@ -25,7 +29,7 @@ async function estadoFinalizacion(pool, torneo) {
 
   const { rows: totalRows } = await pool.query(`SELECT count(*) FROM partidos p WHERE ${condicionFase}`, [torneo.id]);
   const { rows: jugadosRows } = await pool.query(
-    `SELECT count(*), max(p.creado_en) AS ultima FROM partidos p WHERE ${condicionFase} AND p.estado = 'jugado'`,
+    `SELECT count(*), max(COALESCE(p.jugado_hasta, p.creado_en)) AS ultima FROM partidos p WHERE ${condicionFase} AND p.estado = 'jugado'`,
     [torneo.id]
   );
   const total = Number(totalRows[0].count);
