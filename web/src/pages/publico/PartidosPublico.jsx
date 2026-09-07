@@ -282,6 +282,12 @@ export default function PartidosPublico() {
         </button>
       </div>
 
+      {torneo.estado_inscripciones === 'abierta' && (
+        <Link to={`/inscripcion/${torneo.slug}`} className="publico-inscribete-banner">
+          📝 Las inscripciones están abiertas — <strong>Inscribe tu equipo</strong>
+        </Link>
+      )}
+
       <div className="publico-en-vivo-pestanas">
         <button type="button" className={pestana === 'partidos' ? 'activa' : ''} onClick={() => setPestana('partidos')}>Partidos</button>
         <button type="button" className={pestana === 'posiciones' ? 'activa' : ''} onClick={() => setPestana('posiciones')}>Posiciones</button>

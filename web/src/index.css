@@ -3128,6 +3128,24 @@ h1, h2, h3 {
   color: var(--ink-muted);
 }
 
+.publico-inscribete-banner {
+  display: block;
+  text-align: center;
+  margin: 0 0 18px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-strong) 100%);
+  color: #1a1200;
+  font-size: 0.92rem;
+  text-decoration: none;
+  box-shadow: var(--shadow-suave);
+  transition: transform 0.12s ease;
+}
+
+.publico-inscribete-banner:hover {
+  transform: translateY(-1px);
+}
+
 .publico-en-vivo-sonido {
   margin-top: 4px;
   border: 1px solid var(--line);
@@ -3703,4 +3721,143 @@ h1, h2, h3 {
 @keyframes instalarapp-entra {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Pantalla de bienvenida pública (la ruta "/" para quien no tiene sesión):
+   reparte a cada tipo de visitante a su puerta — ver en vivo, inscribirse, o
+   entrar como administrador/árbitro. */
+.bienvenida-page {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  padding: 48px 20px 32px;
+  background:
+    radial-gradient(circle at 15% 15%, var(--accent-soft) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, var(--gold-soft) 0%, transparent 45%),
+    var(--bg);
+}
+
+.bienvenida-hero {
+  text-align: center;
+  max-width: 480px;
+}
+
+.bienvenida-logo {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  margin: 0 auto 8px;
+  display: block;
+  filter: drop-shadow(0 8px 20px rgba(11, 53, 101, 0.25));
+}
+
+.bienvenida-hero h1 {
+  font-size: 2rem;
+  margin: 6px 0 4px;
+}
+
+.bienvenida-sub {
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.bienvenida-opciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 920px;
+}
+
+.bienvenida-opciones--inscripciones {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.bienvenida-opcion {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 30px 24px;
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.bienvenida-opcion::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 5px;
+}
+
+.bienvenida-opcion--vivo::before { background: linear-gradient(90deg, var(--accent) 0%, var(--accent-strong) 100%); }
+.bienvenida-opcion--inscribir::before { background: linear-gradient(90deg, var(--gold) 0%, var(--gold-strong) 100%); }
+.bienvenida-opcion--ingresar::before { background: linear-gradient(90deg, var(--accent-strong) 0%, #1a1200 100%); }
+
+.bienvenida-opcion:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 44px -20px rgba(22, 35, 58, 0.4);
+}
+
+.bienvenida-opcion-icono {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+}
+
+.bienvenida-opcion-icono svg {
+  width: 30px;
+  height: 30px;
+}
+
+.bienvenida-opcion--vivo .bienvenida-opcion-icono { background: var(--accent-soft); color: var(--accent-strong); }
+.bienvenida-opcion--inscribir .bienvenida-opcion-icono { background: var(--gold-soft); color: var(--gold-strong); }
+.bienvenida-opcion--ingresar .bienvenida-opcion-icono { background: var(--surface-2); color: var(--accent-strong); }
+
+.bienvenida-opcion strong {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.bienvenida-opcion p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.bienvenida-opcion-logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+@media (max-width: 600px) {
+  .bienvenida-hero h1 {
+    font-size: 1.6rem;
+  }
+  .bienvenida-page {
+    gap: 28px;
+    padding-top: 36px;
+  }
 }

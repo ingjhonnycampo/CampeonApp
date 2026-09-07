@@ -12,7 +12,9 @@ import AdminCampeonatos from './pages/admin/AdminCampeonatos';
 import AdminUsuarios from './pages/admin/AdminUsuarios';
 import AdminFixture from './pages/admin/AdminFixture';
 import AdminDisciplina from './pages/admin/AdminDisciplina';
+import Bienvenida from './pages/publico/Bienvenida';
 import InscripcionPublica from './pages/publico/InscripcionPublica';
+import InscripcionesAbiertas from './pages/publico/InscripcionesAbiertas';
 import MiInscripcion from './pages/publico/MiInscripcion';
 import PartidoPublico from './pages/publico/PartidoPublico';
 import PartidosPublico from './pages/publico/PartidosPublico';
@@ -30,7 +32,7 @@ import ImprimirInformePartido from './pages/arbitro/ImprimirInformePartido';
 function Inicio() {
   const { usuario, cargando } = useAuth();
   if (cargando) return <CargaJugador />;
-  if (!usuario) return <Navigate to="/login" replace />;
+  if (!usuario) return <Bienvenida />;
   const destino = { admin: '/admin', organizador: '/admin', arbitro: '/arbitro', delegado: '/delegado' }[usuario.rol];
   return <Navigate to={destino} replace />;
 }
@@ -43,6 +45,7 @@ export default function App() {
           <BrowserRouter>
             <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/inscripciones" element={<InscripcionesAbiertas />} />
             <Route path="/inscripcion/:slug" element={<InscripcionPublica />} />
             <Route path="/mi-inscripcion" element={<MiInscripcion />} />
             <Route path="/partido/:partidoId" element={<PartidoPublico />} />
