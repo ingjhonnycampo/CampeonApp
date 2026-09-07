@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PieFirma from '../components/PieFirma';
 import CargaJugador from '../components/CargaJugador';
@@ -36,6 +36,7 @@ export default function Login() {
   return (
     <div className="login-page">
       <div>
+        <Link to="/" className="publico-en-vivo-volver">← Inicio</Link>
         <div className="login-card">
           <img src="/logo.png" alt="CampeonApp" className="login-logo" />
           <span className="login-eyebrow">CampeonApp</span>
