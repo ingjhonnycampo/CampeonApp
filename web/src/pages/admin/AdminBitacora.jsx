@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useModal } from '../../context/ModalContext';
 import { api } from '../../lib/api';
 import PieFirma from '../../components/PieFirma';
+import PanelHeader from '../../components/PanelHeader';
 
 export default function AdminBitacora() {
-  const { usuario, logout } = useAuth();
-  const modal = useModal();
   const [torneos, setTorneos] = useState([]);
   const [torneoId, setTorneoId] = useState('');
   const [registros, setRegistros] = useState([]);
@@ -25,30 +21,9 @@ export default function AdminBitacora() {
     setRegistros(await api('/bitacora' + query));
   }
 
-  async function cerrarSesion() {
-    const confirmado = await modal.confirmar({
-      titulo: '¿Cerrar sesión?',
-      mensaje: 'Vas a salir del panel de administración.',
-      textoAceptar: 'Cerrar sesión'
-    });
-    if (confirmado) logout();
-  }
-
   return (
     <div className="admin-panel">
-      <header className="admin-header">
-        <div className="dashboard-brand">
-          <img src="/logo.png" alt="CampeonApp" className="dashboard-logo" />
-          <div>
-            <Link to="/admin" className="admin-volver">← Panel</Link>
-            <h1>Bitácora</h1>
-          </div>
-        </div>
-        <div className="admin-header-right">
-          <span className="admin-user">{usuario.nombre}</span>
-          <button onClick={cerrarSesion}>Cerrar sesión</button>
-        </div>
-      </header>
+      <PanelHeader titulo="Bitácora" volverA="/admin" />
 
       <section className="admin-card">
         <h2>Actividad reciente</h2>

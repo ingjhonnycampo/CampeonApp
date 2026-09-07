@@ -7,6 +7,7 @@ import { calcularEdad, jugadorRequiereValidacion } from '../../lib/edad';
 import { calcularEstadoCampeonato } from '../../lib/estadoCampeonato';
 import SubidaImagen from '../../components/SubidaImagen';
 import PieFirma from '../../components/PieFirma';
+import PanelHeader from '../../components/PanelHeader';
 import EstadoCampeonato from '../../components/EstadoCampeonato';
 import { nombreModalidad } from '../../lib/modalidad';
 
@@ -45,7 +46,7 @@ function reglasSancionVacias(modalidad) {
 }
 
 export default function AdminCampeonatos() {
-  const { usuario, logout } = useAuth();
+  const { usuario } = useAuth();
   const modal = useModal();
   const [torneos, setTorneos] = useState([]);
   const [torneoActivo, setTorneoActivo] = useState(null);
@@ -167,32 +168,11 @@ export default function AdminCampeonatos() {
     await modal.exito('Jugador agregado a la planilla.');
   }
 
-  async function cerrarSesion() {
-    const confirmado = await modal.confirmar({
-      titulo: '¿Cerrar sesión?',
-      mensaje: 'Vas a salir del panel de administración.',
-      textoAceptar: 'Cerrar sesión'
-    });
-    if (confirmado) logout();
-  }
-
   const torneo = torneos.find((t) => t.id === torneoActivo);
 
   return (
     <div className="admin-panel">
-      <header className="admin-header">
-        <div className="dashboard-brand">
-          <img src="/logo.png" alt="CampeonApp" className="dashboard-logo" />
-          <div>
-            <Link to="/admin" className="admin-volver">← Panel</Link>
-            <h1>Campeonatos</h1>
-          </div>
-        </div>
-        <div className="admin-header-right">
-          <span className="admin-user">{usuario.nombre}</span>
-          <button onClick={cerrarSesion}>Cerrar sesión</button>
-        </div>
-      </header>
+      <PanelHeader titulo="Campeonatos" volverA="/admin" />
 
       <div className="admin-grid admin-grid--dos">
         <SeccionCampeonatos
@@ -356,6 +336,7 @@ function SeccionCampeonatos({ torneos, activo, onSelect, onGuardar, puedeCrear }
             {editandoId !== torneoActivo.id && (
               <button type="button" className="subida-imagen-btn" onClick={editarSeleccionado}>Editar este campeonato</button>
             )}
+            <Link to={`/inscripcion/${torneoActivo.slug}`} className="subida-imagen-btn">Abrir inscripción pública</Link>
             <Link to={`/admin/imprimir/torneo/${torneoActivo.id}`} target="_blank" className="subida-imagen-btn">Imprimir listado de equipos</Link>
           </div>
         </div>

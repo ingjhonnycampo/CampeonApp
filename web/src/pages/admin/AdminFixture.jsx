@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import { nombreModalidad } from '../../lib/modalidad';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useModal } from '../../context/ModalContext';
 import { useConfiguracion } from '../../context/ConfiguracionContext';
 import { api } from '../../lib/api';
 import { calcularEstadoCampeonato } from '../../lib/estadoCampeonato';
 import PieFirma from '../../components/PieFirma';
+import PanelHeader from '../../components/PanelHeader';
 import EstadoCampeonato from '../../components/EstadoCampeonato';
 import SeccionFixture from './SeccionFixture';
 
 export default function AdminFixture() {
-  const { usuario, logout } = useAuth();
+  const { usuario } = useAuth();
   const modal = useModal();
   const { transmisionHabilitada, refrescar: refrescarConfiguracion } = useConfiguracion();
   const [torneos, setTorneos] = useState([]);
@@ -59,32 +59,11 @@ export default function AdminFixture() {
     await cargarTorneos();
   }
 
-  async function cerrarSesion() {
-    const confirmado = await modal.confirmar({
-      titulo: '¿Cerrar sesión?',
-      mensaje: 'Vas a salir del panel de administración.',
-      textoAceptar: 'Cerrar sesión'
-    });
-    if (confirmado) logout();
-  }
-
   const torneo = torneos.find((t) => t.id === torneoActivoId);
 
   return (
     <div className="admin-panel">
-      <header className="admin-header">
-        <div className="dashboard-brand">
-          <img src="/logo.png" alt="CampeonApp" className="dashboard-logo" />
-          <div>
-            <Link to="/admin" className="admin-volver">← Panel</Link>
-            <h1>Fixture</h1>
-          </div>
-        </div>
-        <div className="admin-header-right">
-          <span className="admin-user">{usuario.nombre}</span>
-          <button onClick={cerrarSesion}>Cerrar sesión</button>
-        </div>
-      </header>
+      <PanelHeader titulo="Fixture" volverA="/admin" />
 
       <div className="admin-grid admin-grid--dos">
         <div className="admin-fixture-stack">

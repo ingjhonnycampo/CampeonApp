@@ -1,17 +1,13 @@
 import { useEffect, useState } from 'react';
 import { nombreModalidad } from '../../lib/modalidad';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useModal } from '../../context/ModalContext';
 import { api } from '../../lib/api';
 import { calcularEstadoCampeonato } from '../../lib/estadoCampeonato';
 import PieFirma from '../../components/PieFirma';
+import PanelHeader from '../../components/PanelHeader';
 import EstadoCampeonato from '../../components/EstadoCampeonato';
 import { SeccionDisciplina, SeccionSanciones } from './SeccionFases';
 
 export default function AdminDisciplina() {
-  const { usuario, logout } = useAuth();
-  const modal = useModal();
   const [torneos, setTorneos] = useState([]);
   const [torneoActivoId, setTorneoActivoId] = useState(null);
 
@@ -25,32 +21,11 @@ export default function AdminDisciplina() {
     setTorneoActivoId((actual) => actual ?? data[0]?.id);
   }
 
-  async function cerrarSesion() {
-    const confirmado = await modal.confirmar({
-      titulo: '¿Cerrar sesión?',
-      mensaje: 'Vas a salir del panel de administración.',
-      textoAceptar: 'Cerrar sesión'
-    });
-    if (confirmado) logout();
-  }
-
   const torneo = torneos.find((t) => t.id === torneoActivoId);
 
   return (
     <div className="admin-panel">
-      <header className="admin-header">
-        <div className="dashboard-brand">
-          <img src="/logo.png" alt="CampeonApp" className="dashboard-logo" />
-          <div>
-            <Link to="/admin" className="admin-volver">← Panel</Link>
-            <h1>Disciplina</h1>
-          </div>
-        </div>
-        <div className="admin-header-right">
-          <span className="admin-user">{usuario.nombre}</span>
-          <button onClick={cerrarSesion}>Cerrar sesión</button>
-        </div>
-      </header>
+      <PanelHeader titulo="Disciplina" volverA="/admin" />
 
       <div className="admin-grid admin-grid--dos">
         <section className="admin-card">

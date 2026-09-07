@@ -104,10 +104,10 @@ export default function SeccionFixture({ torneo, onCambio }) {
         <Link to={`/admin/imprimir/fixture/${torneo.id}`} target="_blank" className="subida-imagen-btn">
           Imprimir tabla de posiciones{faseEliminatoria ? ' y cuadro' : ''}
         </Link>
-        <Link to={`/en-vivo/${torneo.slug}`} target="_blank" className="subida-imagen-btn">
+        <Link to={`/en-vivo/${torneo.slug}`} className="subida-imagen-btn">
           Ver resultados en vivo (público)
         </Link>
-        <Link to="/en-vivo" target="_blank" className="admin-link-imprimir">
+        <Link to="/en-vivo" className="admin-link-imprimir">
           Ver todos los campeonatos en vivo
         </Link>
       </div>

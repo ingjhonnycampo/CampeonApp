@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useModal } from '../../context/ModalContext';
 import { api } from '../../lib/api';
+import PanelHeader from '../../components/PanelHeader';
 
 const ETIQUETA_ESTADO = {
   programado: 'Sin empezar',
@@ -12,8 +12,7 @@ const ETIQUETA_ESTADO = {
 };
 
 export default function ArbitroDashboard() {
-  const { usuario, logout } = useAuth();
-  const modal = useModal();
+  const { usuario } = useAuth();
   const navigate = useNavigate();
   const [torneos, setTorneos] = useState([]);
   const [torneoId, setTorneoId] = useState(null);
@@ -55,11 +54,6 @@ export default function ArbitroDashboard() {
     }
   }
 
-  async function cerrarSesion() {
-    const confirmado = await modal.confirmar({ titulo: '¿Cerrar sesión?', textoAceptar: 'Cerrar sesión' });
-    if (confirmado) logout();
-  }
-
   const esArbitro = usuario.rol === 'arbitro';
   const puedeVolverAlAdmin = usuario.rol === 'admin' || usuario.rol === 'organizador';
   const hoy = new Date().toDateString();
@@ -73,20 +67,12 @@ export default function ArbitroDashboard() {
 
   return (
     <div className="dashboard-placeholder">
-      <header>
-        <div className="dashboard-brand">
-          <img src="/logo.png" alt="CampeonApp" className="dashboard-logo" />
-          <div>
-            <span className="login-eyebrow">CampeonApp</span>
-            {puedeVolverAlAdmin && <Link to="/admin" className="admin-volver">← Volver al menú</Link>}
-            <h1>Panel de árbitro/anotador</h1>
-          </div>
-        </div>
-        <div className="admin-header-right">
-          <span className="admin-user">{usuario.nombre}</span>
-          <button onClick={cerrarSesion}>Cerrar sesión</button>
-        </div>
-      </header>
+      <PanelHeader
+        titulo="Panel de árbitro/anotador"
+        eyebrow
+        volverA={puedeVolverAlAdmin ? '/admin' : undefined}
+        volverTexto="← Volver al menú"
+      />
 
       <section className="admin-card">
         <label>Campeonato

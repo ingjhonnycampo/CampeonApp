@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useModal } from '../../context/ModalContext';
 import PieFirma from '../../components/PieFirma';
+import PanelHeader from '../../components/PanelHeader';
 
 const SECCIONES = [
   {
@@ -77,37 +77,26 @@ const SECCIONES = [
         <path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
       </svg>
     )
+  },
+  {
+    to: '/en-vivo',
+    titulo: 'Sitio público',
+    descripcion: 'Lo que ve cualquier persona sin iniciar sesión: resultados en vivo, posiciones e inscripciones de todos los campeonatos.',
+    icono: (
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M3 12h18M12 3c2.5 2.5 3.8 5.8 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.8-3.8-9s1.3-6.5 3.8-9Z" stroke="currentColor" strokeWidth="1.6" />
+      </svg>
+    )
   }
 ];
 
 export default function AdminDashboard() {
-  const { usuario, logout } = useAuth();
-  const modal = useModal();
-
-  async function cerrarSesion() {
-    const confirmado = await modal.confirmar({
-      titulo: '¿Cerrar sesión?',
-      mensaje: 'Vas a salir del panel de administración.',
-      textoAceptar: 'Cerrar sesión'
-    });
-    if (confirmado) logout();
-  }
+  const { usuario } = useAuth();
 
   return (
     <div className="admin-panel">
-      <header className="admin-header">
-        <div className="dashboard-brand">
-          <img src="/logo.png" alt="CampeonApp" className="dashboard-logo" />
-          <div>
-            <span className="login-eyebrow">CampeonApp</span>
-            <h1>Panel de administración</h1>
-          </div>
-        </div>
-        <div className="admin-header-right">
-          <span className="admin-user">{usuario.nombre}</span>
-          <button onClick={cerrarSesion}>Cerrar sesión</button>
-        </div>
-      </header>
+      <PanelHeader titulo="Panel de administración" eyebrow />
 
       <div className="admin-secciones">
         {SECCIONES.filter((s) => !s.soloAdmin || usuario.rol === 'admin').map((s) => (
