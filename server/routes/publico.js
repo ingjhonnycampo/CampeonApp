@@ -396,7 +396,7 @@ router.get('/partidos/:id', asyncHandler(async (req, res) => {
             p.jugado_desde, p.jugado_hasta, p.url_transmision,
             el.nombre AS equipo_local_nombre, el.escudo_url AS equipo_local_escudo,
             ev.nombre AS equipo_visitante_nombre, ev.escudo_url AS equipo_visitante_escudo,
-            t.nombre AS torneo_nombre, t.modalidad, t.duracion_tiempo_1, t.duracion_tiempo_2
+            t.nombre AS torneo_nombre, t.slug AS torneo_slug, t.modalidad, t.duracion_tiempo_1, t.duracion_tiempo_2
      FROM partidos p
      LEFT JOIN equipos el ON el.id = p.equipo_local_id
      LEFT JOIN equipos ev ON ev.id = p.equipo_visitante_id

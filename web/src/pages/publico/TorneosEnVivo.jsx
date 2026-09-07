@@ -112,6 +112,7 @@ export default function TorneosEnVivo() {
   return (
     <div className="publico-partido-page">
       <AvisosPito avisos={avisos} />
+      <Link to="/" className="publico-en-vivo-volver">← Inicio</Link>
       <div className="publico-en-vivo-cabecera">
         <h1>Campeonatos en vivo</h1>
         <span className="publico-en-vivo-modalidad">Todos los resultados, en un solo lugar</span>

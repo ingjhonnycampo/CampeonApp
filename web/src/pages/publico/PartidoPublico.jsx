@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { apiPublico } from '../../lib/api';
 import { nombreModalidad } from '../../lib/modalidad';
 import CargaJugador from '../../components/CargaJugador';
@@ -64,6 +64,9 @@ export default function PartidoPublico() {
 
   return (
     <div className="publico-partido-page">
+      <Link to={partido.torneo_slug ? `/en-vivo/${partido.torneo_slug}` : '/en-vivo'} className="publico-en-vivo-volver">
+        ← Volver al campeonato
+      </Link>
       <div className="publico-partido-breadcrumb">
         <span>{nombreModalidad(partido.modalidad)}</span>
         <span>·</span>
