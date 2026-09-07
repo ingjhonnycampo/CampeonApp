@@ -29,7 +29,13 @@ export default defineConfig({
         // agresivamente rompería eso. El service worker solo existe para cumplir
         // el requisito técnico de "instalable", no para funcionar sin conexión.
         globPatterns: [],
-        navigateFallback: null
+        navigateFallback: null,
+        // Sin esto, un service worker viejo puede seguir controlando pestañas ya
+        // abiertas hasta que se cierren todas — con skipWaiting + clientsClaim,
+        // la versión nueva toma el control apenas termina de instalarse.
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true
       }
     })
   ],
