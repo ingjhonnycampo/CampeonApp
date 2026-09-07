@@ -542,6 +542,28 @@ h1, h2, h3 {
   gap: 4px;
 }
 
+.pie-firma-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #25d366;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pie-firma-whatsapp-icono {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 420px) {
+  .pie-firma {
+    font-size: 0.68rem;
+  }
+}
+
 /* Inscripción pública */
 .publico-page {
   min-height: 100svh;
@@ -815,6 +837,14 @@ h1, h2, h3 {
   background: var(--surface);
   color: var(--ink);
   font-size: 0.8rem;
+  max-width: 100%;
+}
+
+@media (max-width: 480px) {
+  .admin-regla-sancion-fila select {
+    flex: 1 1 100%;
+    width: 100%;
+  }
 }
 
 .admin-regla-sancion-fila input {

@@ -419,29 +419,22 @@ function SeccionCampeonatos({ torneos, activo, onSelect, onGuardar, puedeCrear }
 
         <div className="admin-reglas">
           <span className="subida-imagen-label">Sanciones por tarjeta</span>
-          <p className="admin-ayuda">
-            "Ninguna" no significa que no pasa nada: el jugador igual queda bloqueado para jugar —
-            sin fechas obligatorias, se desbloquea apenas se confirme el pago de la multa (puede ser
-            antes del partido siguiente, o quedar bloqueado varios partidos si no paga). Con fechas
-            obligatorias, esos partidos se pierde sí o sí, pague o no pague, y de ahí en adelante
-            aplica lo mismo: bloqueado hasta que pague.
-          </p>
           {reglasSancion.map((r, i) => (
             <div key={r.tipo_sancion} className="admin-regla-sancion-fila">
               <strong>{ETIQUETA_TIPO_SANCION[r.tipo_sancion]}</strong>
               {r.tipo_sancion === 'azul' ? (
-                <span className="admin-ayuda">No sigue jugando ese partido. Para el siguiente: bloqueado hasta que pague la multa.</span>
+                <span className="admin-ayuda">No sigue ese partido — el siguiente, bloqueado hasta pagar</span>
               ) : (
                 <select
                   value={r.fechas_obligatorias}
                   onChange={(e) => actualizarReglaSancion(i, 'fechas_obligatorias', Number(e.target.value))}
                 >
-                  <option value={0}>Ninguna fecha obligatoria (bloqueado hasta que pague)</option>
-                  <option value={1}>1 fecha obligatoria + bloqueado hasta que pague</option>
-                  <option value={2}>2 fechas obligatorias + bloqueado hasta que pague</option>
-                  <option value={3}>3 fechas obligatorias + bloqueado hasta que pague</option>
-                  <option value={4}>4 fechas obligatorias + bloqueado hasta que pague</option>
-                  <option value={5}>5 fechas obligatorias + bloqueado hasta que pague</option>
+                  <option value={0}>Ninguna — bloqueada hasta pagar</option>
+                  <option value={1}>1 fecha + bloqueada hasta pagar</option>
+                  <option value={2}>2 fechas + bloqueada hasta pagar</option>
+                  <option value={3}>3 fechas + bloqueada hasta pagar</option>
+                  <option value={4}>4 fechas + bloqueada hasta pagar</option>
+                  <option value={5}>5 fechas + bloqueada hasta pagar</option>
                 </select>
               )}
               <input
