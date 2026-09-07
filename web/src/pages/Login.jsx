@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PieFirma from '../components/PieFirma';
 import CargaJugador from '../components/CargaJugador';
@@ -8,6 +8,8 @@ import CampoContrasena from '../components/CampoContrasena';
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sesionExpirada = searchParams.get('sesion') === 'expirada';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -42,6 +44,10 @@ export default function Login() {
           <span className="login-eyebrow">CampeonApp</span>
           <h1>Iniciar sesión</h1>
           <p className="login-sub">Acceso para administradores, árbitros y delegados de equipo.</p>
+
+          {sesionExpirada && (
+            <div className="login-aviso">Tu sesión terminó por inactividad. Vuelve a ingresar.</div>
+          )}
 
           <form onSubmit={onSubmit}>
             <label>
