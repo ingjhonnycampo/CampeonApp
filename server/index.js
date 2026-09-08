@@ -31,6 +31,7 @@ const bitacoraRouter = require('./routes/bitacora');
 const planillaRouter = require('./routes/planilla');
 const sancionesRouter = require('./routes/sanciones');
 const configuracionRouter = require('./routes/configuracion');
+const estadisticasUsoRouter = require('./routes/estadisticasUso');
 
 const app = express();
 const server = http.createServer(app);
@@ -60,6 +61,7 @@ app.use('/api/bitacora', bitacoraRouter);
 app.use('/api/planilla', planillaRouter);
 app.use('/api/sanciones', sancionesRouter);
 app.use('/api/configuracion', configuracionRouter);
+app.use('/api/estadisticas-uso', estadisticasUsoRouter);
 
 io.on('connection', (socket) => {
   console.log('Cliente conectado:', socket.id);

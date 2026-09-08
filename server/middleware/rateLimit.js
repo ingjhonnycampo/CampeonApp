@@ -51,4 +51,15 @@ const uploadPublicoLimiter = rateLimit({
   message: { error: 'Demasiadas imágenes subidas desde este lugar. Espera un momento y vuelve a intentar.' }
 });
 
-module.exports = { loginLimiter, inscripcionLimiter, codigoAccesoLimiter, uploadPublicoLimiter };
+// Registrar una visita: nada sensible, solo evita que alguien infle el conteo
+// a propósito abriendo la misma cosa miles de veces por script.
+const visitaLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip,
+  message: { error: 'Demasiadas visitas registradas desde este lugar.' }
+});
+
+module.exports = { loginLimiter, inscripcionLimiter, codigoAccesoLimiter, uploadPublicoLimiter, visitaLimiter };

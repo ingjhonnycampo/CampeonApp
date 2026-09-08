@@ -9,6 +9,7 @@ import CargaJugador from '../../components/CargaJugador';
 import OrganizaInfo from '../../components/OrganizaInfo';
 import EstadoCampeonato from '../../components/EstadoCampeonato';
 import BotonRegresar from '../../components/BotonRegresar';
+import { registrarVisita } from '../../lib/visitas';
 
 export default function InscripcionPublica() {
   const { slug } = useParams();
@@ -26,7 +27,7 @@ export default function InscripcionPublica() {
   useEffect(() => {
     const inicio = Date.now();
     apiPublico('/torneos/' + slug)
-      .then(setTorneo)
+      .then((t) => { setTorneo(t); registrarVisita('inscripcion', t.id); })
       .catch((err) => setErrorCarga(err.message))
       .finally(() => {
         const espera = Math.max(0, 3000 - (Date.now() - inicio));

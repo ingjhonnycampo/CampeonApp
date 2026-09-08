@@ -8,6 +8,7 @@ import CargaJugador from '../../components/CargaJugador';
 import FilaPartidoPublico from '../../components/FilaPartidoPublico';
 import AvisosPito from '../../components/AvisosPito';
 import EstadoCampeonato from '../../components/EstadoCampeonato';
+import { registrarVisita } from '../../lib/visitas';
 
 // Junta los partidos (liga + fases) de UN torneo, igual que en la página de un
 // solo campeonato, pero acá se hace para cada torneo del hub y se etiqueta cada
@@ -49,6 +50,8 @@ export default function TorneosEnVivo() {
   const [sonidoActivo, setSonidoActivo] = useState(false);
   const { avisos, procesar, anunciar } = usePitidos();
   const { estaAbierto, alternarAbierto, alternarFijado, estaFijado } = useFilasAbiertas();
+
+  useEffect(() => { registrarVisita('en_vivo'); }, []);
 
   useEffect(() => {
     let activo = true;

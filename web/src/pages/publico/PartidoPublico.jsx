@@ -5,6 +5,7 @@ import { nombreModalidad } from '../../lib/modalidad';
 import CargaJugador from '../../components/CargaJugador';
 import LineaTiempoPartido from '../../components/LineaTiempoPartido';
 import RelojConAdicion from '../../components/RelojConAdicion';
+import { registrarVisita } from '../../lib/visitas';
 
 const ETIQUETA_TIEMPO = {
   primer_tiempo: 'Primer tiempo',
@@ -41,10 +42,14 @@ export default function PartidoPublico() {
 
   useEffect(() => {
     let activo = true;
+    let primeraCarga = true;
     async function cargar() {
       try {
         const data = await apiPublico(`/partidos/${partidoId}`);
         if (activo) setDatos(data);
+        // Solo se cuenta la primera vez — esto se repite cada 8s para
+        // mantener el marcador al día, no cada poll es una visita nueva.
+        if (activo && primeraCarga) { registrarVisita('partido', data?.partido?.torneo_id); primeraCarga = false; }
       } finally {
         if (activo) setCargando(false);
       }

@@ -8,6 +8,7 @@ import CargaJugador from '../../components/CargaJugador';
 import FilaPartidoPublico from '../../components/FilaPartidoPublico';
 import AvisosPito from '../../components/AvisosPito';
 import CuadroBracket from '../../components/CuadroBracket';
+import { registrarVisita } from '../../lib/visitas';
 
 function TablaGoleadores({ goleadores }) {
   if (goleadores.length === 0) return <p className="admin-empty">Todavía no hay goles registrados.</p>;
@@ -189,6 +190,7 @@ export default function PartidosPublico() {
 
   useEffect(() => {
     let activo = true;
+    let primeraCarga = true;
 
     async function cargarTodo() {
       let t;
@@ -200,6 +202,9 @@ export default function PartidosPublico() {
       }
       if (!activo) return;
       setTorneo(t);
+      // Solo se cuenta la primera vez — esto se repite cada 10s para
+      // mantener los resultados al día, no cada poll es una visita nueva.
+      if (primeraCarga) { registrarVisita('campeonato', t.id); primeraCarga = false; }
 
       const lista = [];
       if (t.formato === 'liga') {

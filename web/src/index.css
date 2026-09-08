@@ -336,6 +336,70 @@ h1, h2, h3 {
   font-size: 1.15rem;
 }
 
+.admin-metricas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 640px) {
+  .admin-metricas { grid-template-columns: 1fr; }
+}
+
+.admin-metrica {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-metrica strong {
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.admin-metrica span {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+.admin-barras {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 140px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.admin-barra-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 28px;
+  height: 100%;
+  gap: 6px;
+}
+
+.admin-barra-col small {
+  color: var(--ink-muted);
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+
+.admin-barra {
+  width: 100%;
+  min-height: 2px;
+  background: var(--accent);
+  border-radius: 3px 3px 0 0;
+}
+
 .admin-empty {
   color: var(--ink-muted);
   font-size: 0.85rem;

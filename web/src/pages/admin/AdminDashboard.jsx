@@ -79,6 +79,18 @@ const SECCIONES = [
     )
   },
   {
+    to: '/admin/estadisticas-uso',
+    titulo: 'Uso de la plataforma',
+    descripcion: 'Cuántas personas se conectan a la app, qué pantallas visitan y qué campeonatos tienen más movimiento.',
+    soloAdmin: true,
+    icono: (
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 20V10M11 20V4M18 20v-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M3 20h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    )
+  },
+  {
     to: '/en-vivo',
     titulo: 'Sitio público',
     descripcion: 'Lo que ve cualquier persona sin iniciar sesión: resultados en vivo, posiciones e inscripciones de todos los campeonatos.',

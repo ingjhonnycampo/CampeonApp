@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PieFirma from '../../components/PieFirma';
+import { registrarVisita } from '../../lib/visitas';
 
 const OPCIONES = [
   {
@@ -42,6 +44,8 @@ const OPCIONES = [
 ];
 
 export default function Bienvenida() {
+  useEffect(() => { registrarVisita('inicio'); }, []);
+
   return (
     <div className="bienvenida-page">
       <div className="bienvenida-hero">

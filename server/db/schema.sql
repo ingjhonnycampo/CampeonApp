@@ -12,6 +12,19 @@ CREATE TABLE IF NOT EXISTS configuracion_global (
 INSERT INTO configuracion_global (id, transmision_habilitada) VALUES (1, false) ON CONFLICT (id) DO NOTHING;
 ALTER TABLE configuracion_global ENABLE ROW LEVEL SECURITY;
 
+-- Conteo interno de uso de las páginas públicas (sin cuenta): cuántas veces se
+-- abrió cada cosa, y cuándo. A propósito NO guarda IP ni nada que identifique a
+-- la persona — es un conteo de visitas, no un rastreo de personas.
+CREATE TABLE IF NOT EXISTS visitas (
+  id SERIAL PRIMARY KEY,
+  ruta TEXT NOT NULL CHECK (ruta IN ('inicio', 'en_vivo', 'campeonato', 'partido', 'inscripcion')),
+  torneo_id INTEGER REFERENCES torneos(id) ON DELETE SET NULL,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS visitas_creado_en_idx ON visitas (creado_en);
+CREATE INDEX IF NOT EXISTS visitas_torneo_idx ON visitas (torneo_id);
+ALTER TABLE visitas ENABLE ROW LEVEL SECURITY;
+
 CREATE TABLE IF NOT EXISTS torneos (
   id SERIAL PRIMARY KEY,
   nombre TEXT NOT NULL,

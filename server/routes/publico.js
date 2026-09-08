@@ -7,9 +7,22 @@ const { subirImagen, usaSupabase } = require('../storage');
 const { validarReglasPlanilla } = require('../reglas');
 const { estadoPublicoTorneo } = require('../estadoTorneo');
 const { calcularSanciones, calcularExpulsiones } = require('../sanciones');
-const { inscripcionLimiter, codigoAccesoLimiter, uploadPublicoLimiter } = require('../middleware/rateLimit');
+const { inscripcionLimiter, codigoAccesoLimiter, uploadPublicoLimiter, visitaLimiter } = require('../middleware/rateLimit');
 
 const router = express.Router();
+
+const RUTAS_VISITA_VALIDAS = ['inicio', 'en_vivo', 'campeonato', 'partido', 'inscripcion'];
+
+// Conteo interno de uso — no requiere sesión (lo dispara cualquier visitante
+// público). A propósito no guarda IP ni nada identificable, solo qué pantalla
+// se abrió y a qué campeonato pertenece.
+router.post('/visita', visitaLimiter, asyncHandler(async (req, res) => {
+  const { ruta, torneo_id } = req.body;
+  if (!RUTAS_VISITA_VALIDAS.includes(ruta)) return res.status(400).json({ error: 'Ruta inválida' });
+
+  await pool.query('INSERT INTO visitas (ruta, torneo_id) VALUES ($1, $2)', [ruta, torneo_id || null]);
+  res.status(201).json({ ok: true });
+}));
 
 // Una vez armado el fixture con los equipos ya aprobados, sumar un equipo nuevo
 // ya no es seguro (quedaría fuera del calendario) — así que las inscripciones se
