@@ -119,6 +119,18 @@ function puedeIniciarYa(partido) {
   return !!partido.fecha_hora && new Date(partido.fecha_hora) <= new Date();
 }
 
+// La planilla (firmar delegados, armar alineación, confirmar equipo) se puede
+// ir diligenciando desde 40 minutos antes de la hora programada — no hace
+// falta esperar la hora exacta para eso, solo para "Iniciar partido"
+// (puedeIniciarYa). Sin fecha programada no hay ventana que calcular, así que
+// se deja diligenciar igual (el organizador todavía puede no haber programado
+// la hora, y eso no debería bloquear el trabajo previo del planillero).
+const MINUTOS_ANTES_PARA_DILIGENCIAR = 40;
+function puedeDiligenciarYa(partido) {
+  if (!partido.fecha_hora) return true;
+  return new Date(partido.fecha_hora).getTime() - Date.now() <= MINUTOS_ANTES_PARA_DILIGENCIAR * 60 * 1000;
+}
+
 function AvisoHorario({ partido }) {
   if (!partido.fecha_hora) {
     return <p className="admin-empty planilla-aviso-horario">Este partido todavía no tiene fecha y hora programada. Pídele al organizador que la programe antes de poder iniciarlo.</p>;
@@ -132,6 +144,16 @@ function AvisoHorario({ partido }) {
 
 function PrePartido({ datos, onListo, soloLectura }) {
   const { partido } = datos;
+  if (!puedeDiligenciarYa(partido)) {
+    const fechaTexto = new Date(partido.fecha_hora).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' });
+    return (
+      <section className="admin-card">
+        <p className="admin-empty planilla-aviso-horario">
+          La planilla se habilita {MINUTOS_ANTES_PARA_DILIGENCIAR} minutos antes de la hora programada del partido ({fechaTexto}). Vuelve más cerca de esa hora para firmar, armar la alineación y confirmar los equipos.
+        </p>
+      </section>
+    );
+  }
   if (!usaAlineacionFormal(partido.modalidad)) {
     return <IniciarMicrofutbol datos={datos} onListo={onListo} soloLectura={soloLectura} />;
   }

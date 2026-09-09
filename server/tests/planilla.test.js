@@ -37,6 +37,18 @@ test('planilla en vivo', async (t) => {
     await pool.end();
   });
 
+  await t.test('faltando 2 horas para el partido, todavía no se puede firmar la planilla', async () => {
+    await pool.query(`UPDATE partidos SET fecha_hora = now() + interval '2 hours' WHERE id = $1`, [partidoId]);
+    const r = await fetch(`${baseUrl}/planilla/${partidoId}/firma-delegado`, {
+      method: 'POST', headers: conCookie(cookie),
+      body: JSON.stringify({ lado: 'local', firma: 'data:image/png;base64,abc', firmante_nombre: 'Delegado A' })
+    });
+    assert.equal(r.status, 400);
+    // Vuelve a dejar la hora en el pasado para que el resto del flujo (que
+    // asume que el partido ya se puede iniciar) siga funcionando igual.
+    await pool.query(`UPDATE partidos SET fecha_hora = now() - interval '5 minutes' WHERE id = $1`, [partidoId]);
+  });
+
   await t.test('no se puede iniciar sin que los dos equipos estén confirmados', async () => {
     const r = await fetch(`${baseUrl}/planilla/${partidoId}/iniciar`, { method: 'POST', headers: conCookie(cookie) });
     assert.equal(r.status, 400);

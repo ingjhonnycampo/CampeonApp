@@ -24,6 +24,16 @@ function soloArbitro(req, res, next) {
   next();
 }
 
+// La planilla (firma de delegados, alineación, número de camiseta, confirmar
+// equipo) se puede ir diligenciando desde 40 minutos antes de la hora
+// programada del partido — no hace falta esperar la hora exacta para eso, solo
+// para el botón "Iniciar partido" (ver puedeIniciarYa en el frontend).
+const MINUTOS_ANTES_PARA_DILIGENCIAR = 40;
+function puedeDiligenciarPlanilla(partido) {
+  if (!partido.fecha_hora) return true;
+  return new Date(partido.fecha_hora).getTime() - Date.now() <= MINUTOS_ANTES_PARA_DILIGENCIAR * 60 * 1000;
+}
+
 // Un jugador queda expulsado (no puede seguir jugando ni recibir mas nada) si ya
 // tiene una tarjeta roja directa, o si esta es su segunda amarilla del partido.
 async function estaExpulsado(partidoId, jugadorId) {
@@ -170,6 +180,9 @@ router.put('/:id/numero-camiseta', requireAuth, requireAccesoTorneo((req) => obt
   const partido = partidoRows[0];
   if (!partido) return res.status(404).json({ error: 'Partido no encontrado' });
   if (partido.estado === 'jugado') return res.status(400).json({ error: 'Este partido ya se jugó' });
+  if (!puedeDiligenciarPlanilla(partido)) {
+    return res.status(400).json({ error: `La planilla se habilita ${MINUTOS_ANTES_PARA_DILIGENCIAR} minutos antes de la hora programada del partido` });
+  }
 
   await pool.query(
     `INSERT INTO partido_numero_camiseta (partido_id, jugador_id, numero) VALUES ($1, $2, $3)
@@ -195,6 +208,9 @@ router.put('/:id/alineacion', requireAuth, requireAccesoTorneo((req) => obtenerT
   const partido = partidoRows[0];
   if (!partido) return res.status(404).json({ error: 'Partido no encontrado' });
   if (partido.estado === 'jugado') return res.status(400).json({ error: 'Este partido ya se jugó' });
+  if (!puedeDiligenciarPlanilla(partido)) {
+    return res.status(400).json({ error: `La planilla se habilita ${MINUTOS_ANTES_PARA_DILIGENCIAR} minutos antes de la hora programada del partido` });
+  }
   if (![partido.equipo_local_id, partido.equipo_visitante_id].includes(Number(equipo_id))) {
     return res.status(400).json({ error: 'Ese equipo no juega este partido' });
   }
@@ -654,6 +670,9 @@ router.post('/:id/firma-delegado', requireAuth, requireAccesoTorneo((req) => obt
   if (!['programado', 'reprogramado'].includes(partido.estado)) {
     return res.status(400).json({ error: 'La firma del delegado se hace antes de iniciar el partido' });
   }
+  if (!puedeDiligenciarPlanilla(partido)) {
+    return res.status(400).json({ error: `La planilla se habilita ${MINUTOS_ANTES_PARA_DILIGENCIAR} minutos antes de la hora programada del partido` });
+  }
 
   const columnaFirma = lado === 'local' ? 'firma_delegado_local' : 'firma_delegado_visitante';
   const columnaNombre = lado === 'local' ? 'firmante_delegado_local' : 'firmante_delegado_visitante';
@@ -683,6 +702,9 @@ router.post('/:id/confirmar-equipo', requireAuth, requireAccesoTorneo((req) => o
   if (!partido) return res.status(404).json({ error: 'Partido no encontrado' });
   if (!['programado', 'reprogramado'].includes(partido.estado)) {
     return res.status(400).json({ error: 'Este partido ya no está en la etapa previa al inicio' });
+  }
+  if (!puedeDiligenciarPlanilla(partido)) {
+    return res.status(400).json({ error: `La planilla se habilita ${MINUTOS_ANTES_PARA_DILIGENCIAR} minutos antes de la hora programada del partido` });
   }
 
   const columnaFirma = lado === 'local' ? 'firma_delegado_local' : 'firma_delegado_visitante';
