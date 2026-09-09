@@ -107,18 +107,18 @@ export default function PlanillaPartido() {
       )}
 
       {(partido.estado === 'programado' || partido.estado === 'reprogramado') && (
+        <PrePartido datos={datos} onListo={cargar} soloLectura={soloLectura} />
+      )}
+      {partido.estado === 'en_curso' && <PlanillaEnVivo datos={datos} onCambio={cargar} soloLectura={soloLectura} />}
+      {partido.estado === 'jugado' && <ResumenPartido datos={datos} onCambio={cargar} soloLectura={soloLectura} />}
+
+      {(partido.estado === 'programado' || partido.estado === 'reprogramado') && (
         <p className="admin-empty">
           <Link to={`/arbitro/planilla-manual/${partido.id}`} target="_blank">
             🖨️ Imprimir planilla de respaldo en papel (por si falla el internet)
           </Link>
         </p>
       )}
-
-      {(partido.estado === 'programado' || partido.estado === 'reprogramado') && (
-        <PrePartido datos={datos} onListo={cargar} soloLectura={soloLectura} />
-      )}
-      {partido.estado === 'en_curso' && <PlanillaEnVivo datos={datos} onCambio={cargar} soloLectura={soloLectura} />}
-      {partido.estado === 'jugado' && <ResumenPartido datos={datos} onCambio={cargar} soloLectura={soloLectura} />}
     </div>
   );
 }
@@ -170,10 +170,10 @@ function PrePartido({ datos, onListo, soloLectura }) {
 
   return (
     <>
-      {yaDebioJugarse && !soloLectura && <PanelCargaRetroactiva partido={partido} onListo={onListo} />}
       {!usaAlineacionFormal(partido.modalidad)
         ? <IniciarMicrofutbol datos={datos} onListo={onListo} soloLectura={soloLectura} />
         : <ArmarAlineacion datos={datos} onListo={onListo} soloLectura={soloLectura} />}
+      {yaDebioJugarse && !soloLectura && <PanelCargaRetroactiva partido={partido} onListo={onListo} />}
     </>
   );
 }
@@ -231,10 +231,6 @@ function ListaEquipo({ titulo, equipoId, jugadores, partido, reglasCancha, soloL
   return (
     <section className="admin-card">
       <h2>{titulo}{confirmado && <span className="admin-badge-sorteado" style={{ marginLeft: 8 }}>Confirmado</span>}</h2>
-      <PanelFirmaDelegado
-        titulo={`Firma del delegado — ${titulo}`}
-        lado={lado} partido={partido} onCambio={onListo} soloLectura={soloLectura}
-      />
       <div className="admin-list admin-list--alta">
         {jugadores.map((j) => (
           <div key={j.id} className="admin-item admin-item--estatico">
@@ -246,6 +242,10 @@ function ListaEquipo({ titulo, equipoId, jugadores, partido, reglasCancha, soloL
         ))}
         {jugadores.length === 0 && <p className="admin-empty">Este equipo todavía no tiene jugadores validados.</p>}
       </div>
+      <PanelFirmaDelegado
+        titulo={`Firma del delegado — ${titulo}`}
+        lado={lado} partido={partido} onCambio={onListo} soloLectura={soloLectura}
+      />
       {!soloLectura && !confirmado && (
         <>
           <button type="button" className="subida-imagen-btn" onClick={() => onConfirmar(lado)} disabled={confirmando || !firmaOk}>
@@ -337,10 +337,6 @@ function EquipoAlineacion({
   return (
     <section className="admin-card">
       <h2>{titulo}{yaGuardada && <span className="admin-badge-sorteado" style={{ marginLeft: 8 }}>Guardada</span>}</h2>
-      <PanelFirmaDelegado
-        titulo={`Firma del delegado — ${titulo}`}
-        lado={lado} partido={partido} onCambio={onListo} soloLectura={soloLectura}
-      />
       <p className={'admin-empty' + (cantidadTitulares >= maxTitulares ? ' planilla-titulares-completo' : '')}>
         {cantidadTitulares} de {maxTitulares} titulares{cantidadTitulares >= maxTitulares ? ' — ¡completo!' : ''}
       </p>
@@ -368,6 +364,10 @@ function EquipoAlineacion({
           </div>
         ))}
       </div>
+      <PanelFirmaDelegado
+        titulo={`Firma del delegado — ${titulo}`}
+        lado={lado} partido={partido} onCambio={onListo} soloLectura={soloLectura}
+      />
       {!soloLectura && (
         <>
           <button type="button" className="subida-imagen-btn" onClick={() => onGuardar(equipoId, jugadores)} disabled={guardando || !firmaOk}>

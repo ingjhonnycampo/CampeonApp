@@ -138,14 +138,14 @@ router.get('/:id', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePa
     `SELECT g.*, j.nombre AS jugador_nombre, COALESCE(pn.numero, j.numero_camiseta) AS jugador_numero
      FROM partido_goles g LEFT JOIN jugadores j ON j.id = g.jugador_id
      LEFT JOIN partido_numero_camiseta pn ON pn.jugador_id = j.id AND pn.partido_id = g.partido_id
-     WHERE g.partido_id = $1 ORDER BY g.minuto NULLS LAST, g.id`,
+     WHERE g.partido_id = $1 ORDER BY g.minuto NULLS LAST, g.creado_en`,
     [req.params.id]
   );
   const { rows: tarjetas } = await pool.query(
     `SELECT t.*, j.nombre AS jugador_nombre, COALESCE(pn.numero, j.numero_camiseta) AS jugador_numero
      FROM partido_tarjetas t JOIN jugadores j ON j.id = t.jugador_id
      LEFT JOIN partido_numero_camiseta pn ON pn.jugador_id = j.id AND pn.partido_id = t.partido_id
-     WHERE t.partido_id = $1 ORDER BY t.minuto NULLS LAST, t.id`,
+     WHERE t.partido_id = $1 ORDER BY t.minuto NULLS LAST, t.creado_en`,
     [req.params.id]
   );
   const { rows: cambios } = await pool.query(
@@ -156,7 +156,7 @@ router.get('/:id', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePa
      JOIN jugadores je ON je.id = c.jugador_entra_id
      LEFT JOIN partido_numero_camiseta pns ON pns.jugador_id = js.id AND pns.partido_id = c.partido_id
      LEFT JOIN partido_numero_camiseta pne ON pne.jugador_id = je.id AND pne.partido_id = c.partido_id
-     WHERE c.partido_id = $1 ORDER BY c.minuto NULLS LAST, c.id`,
+     WHERE c.partido_id = $1 ORDER BY c.minuto NULLS LAST, c.creado_en`,
     [req.params.id]
   );
   const { rows: hitos } = await pool.query(

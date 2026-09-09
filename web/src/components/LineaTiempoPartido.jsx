@@ -61,8 +61,14 @@ export default function LineaTiempoPartido({ partido, goles, tarjetas, cambios, 
 
   const porTiempo = { primer_tiempo: [], segundo_tiempo: [], sin_tiempo: [] };
   todos.forEach((ev) => { (porTiempo[ev.tiempo] || porTiempo.sin_tiempo).push(ev); });
+  // Goles, tarjetas y cambios vienen de tablas distintas, cada una con su propio
+  // conteo de "id" — dos eventos del mismo minuto pueden tener ids que no
+  // guardan relación con cuál pasó primero de verdad. Por eso el desempate usa
+  // "creado_en" (cuándo se registró en el servidor), que sí es comparable entre
+  // los tres tipos, y solo cae a "id" si por algún motivo no viniera ese dato.
   Object.values(porTiempo).forEach((lista) => lista.sort((a, b) =>
-    (a.minuto ?? 0) - (b.minuto ?? 0) || (a.minuto_adicion ?? 0) - (b.minuto_adicion ?? 0) || a.id - b.id
+    (a.minuto ?? 0) - (b.minuto ?? 0) || (a.minuto_adicion ?? 0) - (b.minuto_adicion ?? 0) ||
+    (a.creado_en && b.creado_en ? new Date(a.creado_en) - new Date(b.creado_en) : a.id - b.id)
   ));
 
   const hitosPorTiempo = { primer_tiempo: { inicio: null, fin: null }, segundo_tiempo: { inicio: null, fin: null } };
