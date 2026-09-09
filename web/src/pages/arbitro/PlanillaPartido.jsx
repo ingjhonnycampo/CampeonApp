@@ -93,6 +93,47 @@ function PrePartido({ datos, onListo, soloLectura }) {
   return <ArmarAlineacion datos={datos} onListo={onListo} soloLectura={soloLectura} />;
 }
 
+// Un equipo de microfútbol en la pantalla previa al inicio: firma del delegado +
+// lista de convocados + botón "Confirmar equipo". Declarado fuera de
+// IniciarMicrofutbol para que React lo trate como el mismo componente entre
+// renders (si se declarara adentro, cada cambio de estado del padre —por
+// ejemplo, al confirmar el otro equipo— crearía una función nueva y forzaría a
+// React a desmontar y volver a montar toda la fila, con el parpadeo/salto visual
+// que eso produce).
+function ListaEquipo({ titulo, equipoId, jugadores, partido, reglasCancha, soloLectura, confirmando, onConfirmar, onListo }) {
+  const lado = equipoId === partido.equipo_local_id ? 'local' : 'visitante';
+  const firmaOk = !!(lado === 'local' ? partido.firma_delegado_local : partido.firma_delegado_visitante);
+  const confirmado = lado === 'local' ? partido.confirmado_local : partido.confirmado_visitante;
+  return (
+    <section className="admin-card">
+      <h2>{titulo}{confirmado && <span className="admin-badge-sorteado" style={{ marginLeft: 8 }}>Confirmado</span>}</h2>
+      <PanelFirmaDelegado
+        titulo={`Firma del delegado — ${titulo}`}
+        lado={lado} partido={partido} onCambio={onListo} soloLectura={soloLectura}
+      />
+      <div className="admin-list admin-list--alta">
+        {jugadores.map((j) => (
+          <div key={j.id} className="admin-item admin-item--estatico">
+            <span><strong>#{j.numero_camiseta ?? '-'}</strong> {j.nombre} <EdadMayor jugador={j} reglasCancha={reglasCancha} /></span>
+            {j.expulsado
+              ? <span className="planilla-badge-sancionado planilla-badge-sancionado--expulsado">⛔ Expulsado del campeonato</span>
+              : j.suspendido && <span className="planilla-badge-sancionado">🚫 Sancionado</span>}
+          </div>
+        ))}
+        {jugadores.length === 0 && <p className="admin-empty">Este equipo todavía no tiene jugadores validados.</p>}
+      </div>
+      {!soloLectura && !confirmado && (
+        <>
+          <button type="button" className="subida-imagen-btn" onClick={() => onConfirmar(lado)} disabled={confirmando || !firmaOk}>
+            Confirmar equipo
+          </button>
+          {!firmaOk && <p className="admin-empty">El delegado debe firmar la planilla antes de confirmar el equipo.</p>}
+        </>
+      )}
+    </section>
+  );
+}
+
 function IniciarMicrofutbol({ datos, onListo, soloLectura }) {
   const modal = useModal();
   const { partido, convocadosLocal, convocadosVisitante, reglasCancha } = datos;
@@ -125,46 +166,20 @@ function IniciarMicrofutbol({ datos, onListo, soloLectura }) {
     }
   }
 
-  function ListaEquipo({ titulo, equipoId, jugadores }) {
-    const lado = equipoId === partido.equipo_local_id ? 'local' : 'visitante';
-    const firmaOk = !!(lado === 'local' ? partido.firma_delegado_local : partido.firma_delegado_visitante);
-    const confirmado = lado === 'local' ? partido.confirmado_local : partido.confirmado_visitante;
-    return (
-      <section className="admin-card">
-        <h2>{titulo}{confirmado && <span className="admin-badge-sorteado" style={{ marginLeft: 8 }}>Confirmado</span>}</h2>
-        <PanelFirmaDelegado
-          titulo={`Firma del delegado — ${titulo}`}
-          lado={lado} partido={partido} onCambio={onListo} soloLectura={soloLectura}
-        />
-        <div className="admin-list admin-list--alta">
-          {jugadores.map((j) => (
-            <div key={j.id} className="admin-item admin-item--estatico">
-              <span><strong>#{j.numero_camiseta ?? '-'}</strong> {j.nombre} <EdadMayor jugador={j} reglasCancha={reglasCancha} /></span>
-              {j.expulsado
-                ? <span className="planilla-badge-sancionado planilla-badge-sancionado--expulsado">⛔ Expulsado del campeonato</span>
-                : j.suspendido && <span className="planilla-badge-sancionado">🚫 Sancionado</span>}
-            </div>
-          ))}
-          {jugadores.length === 0 && <p className="admin-empty">Este equipo todavía no tiene jugadores validados.</p>}
-        </div>
-        {!soloLectura && !confirmado && (
-          <>
-            <button type="button" className="subida-imagen-btn" onClick={() => confirmarEquipo(lado)} disabled={confirmando || !firmaOk}>
-              Confirmar equipo
-            </button>
-            {!firmaOk && <p className="admin-empty">El delegado debe firmar la planilla antes de confirmar el equipo.</p>}
-          </>
-        )}
-      </section>
-    );
-  }
-
   return (
     <>
       <p className="admin-empty">Microfútbol: no se maneja alineación titular/suplente — los cambios son ilimitados durante el partido.</p>
       <div className="planilla-equipos-grid">
-        <ListaEquipo titulo={partido.equipo_local_nombre} equipoId={partido.equipo_local_id} jugadores={convocadosLocal} />
-        <ListaEquipo titulo={partido.equipo_visitante_nombre} equipoId={partido.equipo_visitante_id} jugadores={convocadosVisitante} />
+        <ListaEquipo
+          titulo={partido.equipo_local_nombre} equipoId={partido.equipo_local_id} jugadores={convocadosLocal}
+          partido={partido} reglasCancha={reglasCancha} soloLectura={soloLectura} confirmando={confirmando}
+          onConfirmar={confirmarEquipo} onListo={onListo}
+        />
+        <ListaEquipo
+          titulo={partido.equipo_visitante_nombre} equipoId={partido.equipo_visitante_id} jugadores={convocadosVisitante}
+          partido={partido} reglasCancha={reglasCancha} soloLectura={soloLectura} confirmando={confirmando}
+          onConfirmar={confirmarEquipo} onListo={onListo}
+        />
       </div>
       <section className="admin-card">
         <AvisoHorario partido={partido} />
@@ -180,6 +195,64 @@ function IniciarMicrofutbol({ datos, onListo, soloLectura }) {
         )}
       </section>
     </>
+  );
+}
+
+// Tarjeta de un equipo con firma del delegado + selector de titular/suplente +
+// botón para guardar. Declarado fuera de ArmarAlineacion: si viviera adentro,
+// cada clic en "Titular"/"Suplente" (que actualiza el estado del padre) crearía
+// una función nueva en cada render y React desmontaría y volvería a montar las
+// DOS tarjetas de equipo desde cero — de ahí el salto visual y el estado raro
+// que se veía al elegir jugadores del segundo equipo.
+function EquipoAlineacion({
+  titulo, equipoId, jugadores, partido, reglasCancha, soloLectura, guardando,
+  yaGuardada, cantidadTitulares, maxTitulares, estadoDe, onElegir, onGuardar, onListo
+}) {
+  const lado = equipoId === partido.equipo_local_id ? 'local' : 'visitante';
+  const firmaOk = !!(lado === 'local' ? partido.firma_delegado_local : partido.firma_delegado_visitante);
+  return (
+    <section className="admin-card">
+      <h2>{titulo}{yaGuardada && <span className="admin-badge-sorteado" style={{ marginLeft: 8 }}>Guardada</span>}</h2>
+      <PanelFirmaDelegado
+        titulo={`Firma del delegado — ${titulo}`}
+        lado={lado} partido={partido} onCambio={onListo} soloLectura={soloLectura}
+      />
+      <p className={'admin-empty' + (cantidadTitulares >= maxTitulares ? ' planilla-titulares-completo' : '')}>
+        {cantidadTitulares} de {maxTitulares} titulares{cantidadTitulares >= maxTitulares ? ' — ¡completo!' : ''}
+      </p>
+      <div className="planilla-alineacion-lista">
+        {jugadores.map((j) => (
+          <div key={j.id} className="planilla-alineacion-fila">
+            <span className="planilla-jugador-numero">{j.numero_camiseta ?? '-'}</span>
+            <span className="planilla-alineacion-nombre">
+              {j.nombre} <EdadMayor jugador={j} reglasCancha={reglasCancha} />
+              {j.expulsado
+              ? <span className="planilla-badge-sancionado planilla-badge-sancionado--expulsado">⛔ Expulsado del campeonato</span>
+              : j.suspendido && <span className="planilla-badge-sancionado">🚫 Sancionado</span>}
+            </span>
+            <div className="planilla-segmentado">
+              {['no', 'titular', 'suplente'].map((valor) => (
+                <button
+                  key={valor} type="button" disabled={soloLectura || (valor !== 'no' && j.suspendido)}
+                  className={'planilla-segmentado-btn' + (estadoDe(j.id) === valor ? ' planilla-segmentado-btn--activo planilla-segmentado-btn--' + valor : '')}
+                  onClick={() => onElegir(j.id, valor, jugadores)}
+                >
+                  {valor === 'no' ? 'No convocado' : valor === 'titular' ? 'Titular' : 'Suplente'}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      {!soloLectura && (
+        <>
+          <button type="button" className="subida-imagen-btn" onClick={() => onGuardar(equipoId, jugadores)} disabled={guardando || !firmaOk}>
+            Guardar alineación de {titulo}
+          </button>
+          {!firmaOk && <p className="admin-empty">El delegado debe firmar la planilla antes de guardar la alineación.</p>}
+        </>
+      )}
+    </section>
   );
 }
 
@@ -246,57 +319,6 @@ function ArmarAlineacion({ datos, onListo, soloLectura }) {
     }
   }
 
-  function EquipoAlineacion({ titulo, equipoId, jugadores }) {
-    const yaGuardada = datos.alineacion.some((a) => a.equipo_id === equipoId);
-    const cantidadTitulares = contarTitulares(jugadores);
-    const lado = equipoId === partido.equipo_local_id ? 'local' : 'visitante';
-    const firmaOk = !!(lado === 'local' ? partido.firma_delegado_local : partido.firma_delegado_visitante);
-    return (
-      <section className="admin-card">
-        <h2>{titulo}{yaGuardada && <span className="admin-badge-sorteado" style={{ marginLeft: 8 }}>Guardada</span>}</h2>
-        <PanelFirmaDelegado
-          titulo={`Firma del delegado — ${titulo}`}
-          lado={lado} partido={partido} onCambio={onListo} soloLectura={soloLectura}
-        />
-        <p className={'admin-empty' + (cantidadTitulares >= maxTitulares ? ' planilla-titulares-completo' : '')}>
-          {cantidadTitulares} de {maxTitulares} titulares{cantidadTitulares >= maxTitulares ? ' — ¡completo!' : ''}
-        </p>
-        <div className="planilla-alineacion-lista">
-          {jugadores.map((j) => (
-            <div key={j.id} className="planilla-alineacion-fila">
-              <span className="planilla-jugador-numero">{j.numero_camiseta ?? '-'}</span>
-              <span className="planilla-alineacion-nombre">
-                {j.nombre} <EdadMayor jugador={j} reglasCancha={reglasCancha} />
-                {j.expulsado
-                ? <span className="planilla-badge-sancionado planilla-badge-sancionado--expulsado">⛔ Expulsado del campeonato</span>
-                : j.suspendido && <span className="planilla-badge-sancionado">🚫 Sancionado</span>}
-              </span>
-              <div className="planilla-segmentado">
-                {['no', 'titular', 'suplente'].map((valor) => (
-                  <button
-                    key={valor} type="button" disabled={soloLectura || (valor !== 'no' && j.suspendido)}
-                    className={'planilla-segmentado-btn' + (estadoDe(j.id) === valor ? ' planilla-segmentado-btn--activo planilla-segmentado-btn--' + valor : '')}
-                    onClick={() => elegir(j.id, valor, jugadores)}
-                  >
-                    {valor === 'no' ? 'No convocado' : valor === 'titular' ? 'Titular' : 'Suplente'}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-        {!soloLectura && (
-          <>
-            <button type="button" className="subida-imagen-btn" onClick={() => guardarEquipo(equipoId, jugadores)} disabled={guardando || !firmaOk}>
-              Guardar alineación de {titulo}
-            </button>
-            {!firmaOk && <p className="admin-empty">El delegado debe firmar la planilla antes de guardar la alineación.</p>}
-          </>
-        )}
-      </section>
-    );
-  }
-
   const ambasGuardadas = datos.alineacion.length > 0 &&
     [partido.equipo_local_id, partido.equipo_visitante_id].every((id) => datos.alineacion.some((a) => a.equipo_id === id && a.titular));
   const habilitado = puedeIniciarYa(partido);
@@ -305,8 +327,20 @@ function ArmarAlineacion({ datos, onListo, soloLectura }) {
     <>
       <p className="admin-empty">Marca titulares y suplentes de cada equipo, guarda cada alineación, y luego dale a "Iniciar partido".</p>
       <div className="planilla-equipos-grid">
-        <EquipoAlineacion titulo={partido.equipo_local_nombre} equipoId={partido.equipo_local_id} jugadores={convocadosLocal} />
-        <EquipoAlineacion titulo={partido.equipo_visitante_nombre} equipoId={partido.equipo_visitante_id} jugadores={convocadosVisitante} />
+        <EquipoAlineacion
+          titulo={partido.equipo_local_nombre} equipoId={partido.equipo_local_id} jugadores={convocadosLocal}
+          partido={partido} reglasCancha={reglasCancha} soloLectura={soloLectura} guardando={guardando}
+          yaGuardada={datos.alineacion.some((a) => a.equipo_id === partido.equipo_local_id)}
+          cantidadTitulares={contarTitulares(convocadosLocal)} maxTitulares={maxTitulares}
+          estadoDe={estadoDe} onElegir={elegir} onGuardar={guardarEquipo} onListo={onListo}
+        />
+        <EquipoAlineacion
+          titulo={partido.equipo_visitante_nombre} equipoId={partido.equipo_visitante_id} jugadores={convocadosVisitante}
+          partido={partido} reglasCancha={reglasCancha} soloLectura={soloLectura} guardando={guardando}
+          yaGuardada={datos.alineacion.some((a) => a.equipo_id === partido.equipo_visitante_id)}
+          cantidadTitulares={contarTitulares(convocadosVisitante)} maxTitulares={maxTitulares}
+          estadoDe={estadoDe} onElegir={elegir} onGuardar={guardarEquipo} onListo={onListo}
+        />
       </div>
       <section className="admin-card">
         <AvisoHorario partido={partido} />
@@ -452,6 +486,131 @@ function cronometroCorriendo(partido) {
   return ['primer_tiempo', 'segundo_tiempo'].includes(partido.tiempo_actual) && !!partido.cronometro_inicio;
 }
 
+// Fila de un jugador durante el partido en vivo (gol/autogol/tarjetas). Declarada
+// fuera de PlanillaEnVivo: si viviera adentro, cada gol/tarjeta/cambio (que
+// activa "enviando" y luego lo apaga) crearía una función nueva y forzaría a
+// React a desmontar y volver a montar TODAS las filas de los dos equipos en
+// cada acción — incluido el panel de cambio, que perdería su selección de
+// "quién sale" a mitad de camino.
+function FilaJugador({ jugador, enBanca, goles, tarjetas, enviando, puedeAnotarGol, soloLectura, modalidad, reglasCancha, onGol, onTarjeta }) {
+  const golesJugador = goles.filter((g) => g.jugador_id === jugador.id && !g.en_propia_puerta);
+  const autogolesJugador = goles.filter((g) => g.jugador_id === jugador.id && g.en_propia_puerta);
+  const amarillas = tarjetas.filter((t) => t.jugador_id === jugador.id && t.tipo === 'amarilla').length;
+  const roja = tarjetas.some((t) => t.jugador_id === jugador.id && t.tipo === 'roja');
+  const azul = tarjetas.some((t) => t.jugador_id === jugador.id && t.tipo === 'azul');
+  const expulsado = roja || amarillas >= 2;
+  const bloqueado = expulsado || azul;
+  // En banca no se pueden anotar goles, pero sí se puede mostrar tarjeta (antes de
+  // entrar o después de haber sido reemplazado). El gol además exige que el
+  // cronómetro esté corriendo.
+  const sinGol = enviando || enBanca || bloqueado || !puedeAnotarGol;
+  const sinTarjeta = enviando || bloqueado || soloLectura;
+
+  return (
+    <div className={'planilla-jugador' + (enBanca ? ' planilla-jugador--banca' : '') + (bloqueado ? ' planilla-jugador--expulsado' : '')}>
+      <span className="planilla-jugador-numero">{jugador.numero_camiseta ?? '-'}</span>
+      <span className="planilla-jugador-info">
+        {jugador.nombre} <EdadMayor jugador={jugador} reglasCancha={reglasCancha} />
+        {enBanca && !bloqueado && <em className="planilla-jugador-tag">banca</em>}
+        {expulsado && <em className="planilla-jugador-tag planilla-jugador-tag--expulsado">expulsado</em>}
+        {!expulsado && azul && <em className="planilla-jugador-tag planilla-jugador-tag--azul">cambio obligatorio</em>}
+      </span>
+      <span className="planilla-jugador-marcas">
+        {golesJugador.length > 0 && <span className="planilla-marca-gol">⚽×{golesJugador.length}</span>}
+        {autogolesJugador.length > 0 && <span className="planilla-marca-gol planilla-marca-gol--og">OG×{autogolesJugador.length}</span>}
+        {amarillas > 0 && <span className="planilla-marca-tarjeta planilla-marca-tarjeta--amarilla">{amarillas}</span>}
+        {roja && <span className="planilla-marca-tarjeta planilla-marca-tarjeta--roja" />}
+        {azul && <span className="planilla-marca-tarjeta planilla-marca-tarjeta--azul" />}
+      </span>
+      <span className="planilla-jugador-acciones">
+        <button type="button" title="Gol" onClick={() => onGol(jugador.id, false)} disabled={sinGol}>⚽</button>
+        <button type="button" title="Autogol" className="planilla-btn-og" onClick={() => onGol(jugador.id, true)} disabled={sinGol}>OG</button>
+        <button type="button" title="Tarjeta amarilla" className="planilla-btn-amarilla" onClick={() => onTarjeta(jugador.id, 'amarilla')} disabled={sinTarjeta}>🟨</button>
+        <button type="button" title="Tarjeta roja" className="planilla-btn-roja" onClick={() => onTarjeta(jugador.id, 'roja')} disabled={sinTarjeta}>🟥</button>
+        {permiteTarjetaAzul(modalidad) && (
+          <button type="button" title="Tarjeta azul (cambio obligatorio)" className="planilla-btn-azul" onClick={() => onTarjeta(jugador.id, 'azul')} disabled={sinTarjeta}>🟦</button>
+        )}
+      </span>
+    </div>
+  );
+}
+
+// Selector de sustitución de un equipo (sale/entra). Declarado fuera de
+// PlanillaEnVivo por la misma razón que FilaJugador — además, este componente
+// tiene su propio estado (qué jugador quedó marcado como "sale"), que se perdía
+// justo al elegir a alguien porque el remontaje lo reiniciaba a null.
+function PanelCambio({ equipoNombre, enCancha, suplentes, enviando, jugadoresPorId, reglasCancha, onCambio }) {
+  const [saleId, setSaleId] = useState(null);
+
+  async function elegirEntra(entraId) {
+    if (!saleId) return;
+    await onCambio(saleId, entraId);
+    setSaleId(null);
+  }
+
+  if (enCancha.length === 0 || suplentes.length === 0) return null;
+
+  return (
+    <div className="planilla-cambio-panel">
+      <h3>{equipoNombre}</h3>
+      <div className="planilla-cambio-columnas">
+        <div>
+          <p className="planilla-cambio-etiqueta">Sale</p>
+          <div className="planilla-cambio-lista">
+            {enCancha.map((a) => (
+              <button
+                key={a.jugador_id} type="button" disabled={enviando}
+                className={'planilla-cambio-jugador' + (saleId === a.jugador_id ? ' planilla-cambio-jugador--elegido' : '')}
+                onClick={() => setSaleId(a.jugador_id)}
+              >
+                {jugadoresPorId[a.jugador_id]?.nombre} <EdadMayor jugador={jugadoresPorId[a.jugador_id] || {}} reglasCancha={reglasCancha} />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="planilla-cambio-etiqueta">Entra</p>
+          <div className="planilla-cambio-lista">
+            {suplentes.map((a) => (
+              <button
+                key={a.jugador_id} type="button" disabled={!saleId || enviando}
+                className="planilla-cambio-jugador"
+                onClick={() => elegirEntra(a.jugador_id)}
+              >
+                {jugadoresPorId[a.jugador_id]?.nombre} <EdadMayor jugador={jugadoresPorId[a.jugador_id] || {}} reglasCancha={reglasCancha} />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      {!saleId && <p className="admin-empty">Elige primero quién sale, luego quién entra.</p>}
+    </div>
+  );
+}
+
+// Columna con todos los jugadores convocados de un equipo. Declarada fuera de
+// PlanillaEnVivo por la misma razón.
+function ColumnaEquipo({
+  titulo, jugadores, usaAlineacion, idsEnCancha, goles, tarjetas, enviando,
+  puedeAnotarGol, soloLectura, modalidad, reglasCancha, onGol, onTarjeta
+}) {
+  return (
+    <section className="admin-card planilla-columna-equipo">
+      <h2>{titulo}</h2>
+      <div className="planilla-jugadores-lista">
+        {jugadores.map((j) => (
+          <FilaJugador
+            key={j.id} jugador={j} enBanca={usaAlineacion && !idsEnCancha.has(j.id)}
+            goles={goles} tarjetas={tarjetas} enviando={enviando} puedeAnotarGol={puedeAnotarGol}
+            soloLectura={soloLectura} modalidad={modalidad} reglasCancha={reglasCancha}
+            onGol={onGol} onTarjeta={onTarjeta}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
   const modal = useModal();
   const { partido, alineacion, goles, tarjetas, cambios, hitos, convocadosLocal, convocadosVisitante, reglasCancha } = datos;
@@ -588,111 +747,6 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
     }
   }
 
-  function FilaJugador({ jugador, enBanca }) {
-    const golesJugador = goles.filter((g) => g.jugador_id === jugador.id && !g.en_propia_puerta);
-    const autogolesJugador = goles.filter((g) => g.jugador_id === jugador.id && g.en_propia_puerta);
-    const amarillas = tarjetas.filter((t) => t.jugador_id === jugador.id && t.tipo === 'amarilla').length;
-    const roja = tarjetas.some((t) => t.jugador_id === jugador.id && t.tipo === 'roja');
-    const azul = tarjetas.some((t) => t.jugador_id === jugador.id && t.tipo === 'azul');
-    const expulsado = roja || amarillas >= 2;
-    const bloqueado = expulsado || azul;
-    // En banca no se pueden anotar goles, pero sí se puede mostrar tarjeta (antes de
-    // entrar o después de haber sido reemplazado). El gol además exige que el
-    // cronómetro esté corriendo.
-    const sinGol = enviando || enBanca || bloqueado || !puedeAnotarGol;
-    const sinTarjeta = enviando || bloqueado || soloLectura;
-
-    return (
-      <div className={'planilla-jugador' + (enBanca ? ' planilla-jugador--banca' : '') + (bloqueado ? ' planilla-jugador--expulsado' : '')}>
-        <span className="planilla-jugador-numero">{jugador.numero_camiseta ?? '-'}</span>
-        <span className="planilla-jugador-info">
-          {jugador.nombre} <EdadMayor jugador={jugador} reglasCancha={reglasCancha} />
-          {enBanca && !bloqueado && <em className="planilla-jugador-tag">banca</em>}
-          {expulsado && <em className="planilla-jugador-tag planilla-jugador-tag--expulsado">expulsado</em>}
-          {!expulsado && azul && <em className="planilla-jugador-tag planilla-jugador-tag--azul">cambio obligatorio</em>}
-        </span>
-        <span className="planilla-jugador-marcas">
-          {golesJugador.length > 0 && <span className="planilla-marca-gol">⚽×{golesJugador.length}</span>}
-          {autogolesJugador.length > 0 && <span className="planilla-marca-gol planilla-marca-gol--og">OG×{autogolesJugador.length}</span>}
-          {amarillas > 0 && <span className="planilla-marca-tarjeta planilla-marca-tarjeta--amarilla">{amarillas}</span>}
-          {roja && <span className="planilla-marca-tarjeta planilla-marca-tarjeta--roja" />}
-          {azul && <span className="planilla-marca-tarjeta planilla-marca-tarjeta--azul" />}
-        </span>
-        <span className="planilla-jugador-acciones">
-          <button type="button" title="Gol" onClick={() => registrarGol(jugador.id, false)} disabled={sinGol}>⚽</button>
-          <button type="button" title="Autogol" className="planilla-btn-og" onClick={() => registrarGol(jugador.id, true)} disabled={sinGol}>OG</button>
-          <button type="button" title="Tarjeta amarilla" className="planilla-btn-amarilla" onClick={() => registrarTarjeta(jugador.id, 'amarilla')} disabled={sinTarjeta}>🟨</button>
-          <button type="button" title="Tarjeta roja" className="planilla-btn-roja" onClick={() => registrarTarjeta(jugador.id, 'roja')} disabled={sinTarjeta}>🟥</button>
-          {permiteTarjetaAzul(partido.modalidad) && (
-            <button type="button" title="Tarjeta azul (cambio obligatorio)" className="planilla-btn-azul" onClick={() => registrarTarjeta(jugador.id, 'azul')} disabled={sinTarjeta}>🟦</button>
-          )}
-        </span>
-      </div>
-    );
-  }
-
-  function PanelCambio({ equipoNombre, enCancha, suplentes }) {
-    const [saleId, setSaleId] = useState(null);
-
-    async function elegirEntra(entraId) {
-      if (!saleId) return;
-      await hacerCambio(saleId, entraId);
-      setSaleId(null);
-    }
-
-    if (enCancha.length === 0 || suplentes.length === 0) return null;
-
-    return (
-      <div className="planilla-cambio-panel">
-        <h3>{equipoNombre}</h3>
-        <div className="planilla-cambio-columnas">
-          <div>
-            <p className="planilla-cambio-etiqueta">Sale</p>
-            <div className="planilla-cambio-lista">
-              {enCancha.map((a) => (
-                <button
-                  key={a.jugador_id} type="button" disabled={enviando}
-                  className={'planilla-cambio-jugador' + (saleId === a.jugador_id ? ' planilla-cambio-jugador--elegido' : '')}
-                  onClick={() => setSaleId(a.jugador_id)}
-                >
-                  {jugadoresPorId[a.jugador_id]?.nombre} <EdadMayor jugador={jugadoresPorId[a.jugador_id] || {}} reglasCancha={reglasCancha} />
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <p className="planilla-cambio-etiqueta">Entra</p>
-            <div className="planilla-cambio-lista">
-              {suplentes.map((a) => (
-                <button
-                  key={a.jugador_id} type="button" disabled={!saleId || enviando}
-                  className="planilla-cambio-jugador"
-                  onClick={() => elegirEntra(a.jugador_id)}
-                >
-                  {jugadoresPorId[a.jugador_id]?.nombre} <EdadMayor jugador={jugadoresPorId[a.jugador_id] || {}} reglasCancha={reglasCancha} />
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        {!saleId && <p className="admin-empty">Elige primero quién sale, luego quién entra.</p>}
-      </div>
-    );
-  }
-
-  function ColumnaEquipo({ titulo, jugadores }) {
-    return (
-      <section className="admin-card planilla-columna-equipo">
-        <h2>{titulo}</h2>
-        <div className="planilla-jugadores-lista">
-          {jugadores.map((j) => (
-            <FilaJugador key={j.id} jugador={j} enBanca={usaAlineacion && !idsEnCancha.has(j.id)} />
-          ))}
-        </div>
-      </section>
-    );
-  }
-
   return (
     <>
       <section className="admin-card">
@@ -704,15 +758,33 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
       <Cronometro partido={partido} onCambio={onCambio} soloLectura={soloLectura} />
 
       <div className="planilla-equipos-grid">
-        <ColumnaEquipo titulo={partido.equipo_local_nombre} jugadores={convocadosLocal} />
-        <ColumnaEquipo titulo={partido.equipo_visitante_nombre} jugadores={convocadosVisitante} />
+        <ColumnaEquipo
+          titulo={partido.equipo_local_nombre} jugadores={convocadosLocal}
+          usaAlineacion={usaAlineacion} idsEnCancha={idsEnCancha}
+          goles={goles} tarjetas={tarjetas} enviando={enviando} puedeAnotarGol={puedeAnotarGol}
+          soloLectura={soloLectura} modalidad={partido.modalidad} reglasCancha={reglasCancha}
+          onGol={registrarGol} onTarjeta={registrarTarjeta}
+        />
+        <ColumnaEquipo
+          titulo={partido.equipo_visitante_nombre} jugadores={convocadosVisitante}
+          usaAlineacion={usaAlineacion} idsEnCancha={idsEnCancha}
+          goles={goles} tarjetas={tarjetas} enviando={enviando} puedeAnotarGol={puedeAnotarGol}
+          soloLectura={soloLectura} modalidad={partido.modalidad} reglasCancha={reglasCancha}
+          onGol={registrarGol} onTarjeta={registrarTarjeta}
+        />
       </div>
 
       {!soloLectura && partido.tiempo_actual != null && usaAlineacion && (suplentesLocal.length > 0 || suplentesVisitante.length > 0) && (
         <section className="admin-card">
           <h2>Registrar cambio</h2>
-          <PanelCambio equipoNombre={partido.equipo_local_nombre} enCancha={paraSalirLocal} suplentes={suplentesLocal} />
-          <PanelCambio equipoNombre={partido.equipo_visitante_nombre} enCancha={paraSalirVisitante} suplentes={suplentesVisitante} />
+          <PanelCambio
+            equipoNombre={partido.equipo_local_nombre} enCancha={paraSalirLocal} suplentes={suplentesLocal}
+            enviando={enviando} jugadoresPorId={jugadoresPorId} reglasCancha={reglasCancha} onCambio={hacerCambio}
+          />
+          <PanelCambio
+            equipoNombre={partido.equipo_visitante_nombre} enCancha={paraSalirVisitante} suplentes={suplentesVisitante}
+            enviando={enviando} jugadoresPorId={jugadoresPorId} reglasCancha={reglasCancha} onCambio={hacerCambio}
+          />
         </section>
       )}
 
