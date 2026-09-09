@@ -117,17 +117,20 @@ router.get('/:id', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePa
 
   const { rows: alineacion } = await pool.query('SELECT * FROM partido_alineacion WHERE partido_id = $1', [req.params.id]);
   const { rows: goles } = await pool.query(
-    `SELECT g.*, j.nombre AS jugador_nombre FROM partido_goles g LEFT JOIN jugadores j ON j.id = g.jugador_id
+    `SELECT g.*, j.nombre AS jugador_nombre, j.numero_camiseta AS jugador_numero
+     FROM partido_goles g LEFT JOIN jugadores j ON j.id = g.jugador_id
      WHERE g.partido_id = $1 ORDER BY g.minuto NULLS LAST, g.id`,
     [req.params.id]
   );
   const { rows: tarjetas } = await pool.query(
-    `SELECT t.*, j.nombre AS jugador_nombre FROM partido_tarjetas t JOIN jugadores j ON j.id = t.jugador_id
+    `SELECT t.*, j.nombre AS jugador_nombre, j.numero_camiseta AS jugador_numero
+     FROM partido_tarjetas t JOIN jugadores j ON j.id = t.jugador_id
      WHERE t.partido_id = $1 ORDER BY t.minuto NULLS LAST, t.id`,
     [req.params.id]
   );
   const { rows: cambios } = await pool.query(
-    `SELECT c.*, js.nombre AS jugador_sale_nombre, je.nombre AS jugador_entra_nombre
+    `SELECT c.*, js.nombre AS jugador_sale_nombre, js.numero_camiseta AS jugador_sale_numero,
+            je.nombre AS jugador_entra_nombre, je.numero_camiseta AS jugador_entra_numero
      FROM partido_cambios c
      JOIN jugadores js ON js.id = c.jugador_sale_id
      JOIN jugadores je ON je.id = c.jugador_entra_id

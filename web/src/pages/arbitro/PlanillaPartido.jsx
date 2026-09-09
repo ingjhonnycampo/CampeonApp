@@ -563,7 +563,7 @@ function PanelCambio({ equipoNombre, enCancha, suplentes, enviando, jugadoresPor
                 className={'planilla-cambio-jugador' + (saleId === a.jugador_id ? ' planilla-cambio-jugador--elegido' : '')}
                 onClick={() => setSaleId(a.jugador_id)}
               >
-                {jugadoresPorId[a.jugador_id]?.nombre} <EdadMayor jugador={jugadoresPorId[a.jugador_id] || {}} reglasCancha={reglasCancha} />
+                <strong>#{jugadoresPorId[a.jugador_id]?.numero_camiseta ?? '-'}</strong> {jugadoresPorId[a.jugador_id]?.nombre} <EdadMayor jugador={jugadoresPorId[a.jugador_id] || {}} reglasCancha={reglasCancha} />
               </button>
             ))}
           </div>
@@ -577,7 +577,7 @@ function PanelCambio({ equipoNombre, enCancha, suplentes, enviando, jugadoresPor
                 className="planilla-cambio-jugador"
                 onClick={() => elegirEntra(a.jugador_id)}
               >
-                {jugadoresPorId[a.jugador_id]?.nombre} <EdadMayor jugador={jugadoresPorId[a.jugador_id] || {}} reglasCancha={reglasCancha} />
+                <strong>#{jugadoresPorId[a.jugador_id]?.numero_camiseta ?? '-'}</strong> {jugadoresPorId[a.jugador_id]?.nombre} <EdadMayor jugador={jugadoresPorId[a.jugador_id] || {}} reglasCancha={reglasCancha} />
               </button>
             ))}
           </div>
@@ -800,9 +800,9 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
               <div key={`${ev._tipo}-${ev.id}`} className="admin-item admin-item--estatico">
                 <span>
                   {ev.minuto != null ? `${etiquetaMinuto(ev.minuto, ev.tiempo, ev.minuto_adicion)} ` : ''}
-                  {ev._tipo === 'gol' && `⚽ ${ev.jugador_nombre || 'Jugador'}${ev.en_propia_puerta ? ' (en propia puerta)' : ''}`}
-                  {ev._tipo === 'tarjeta' && `${{ amarilla: '🟨', roja: '🟥', azul: '🟦' }[ev.tipo]} ${ev.jugador_nombre}`}
-                  {ev._tipo === 'cambio' && `🔄 Sale ${ev.jugador_sale_nombre} — Entra ${ev.jugador_entra_nombre}`}
+                  {ev._tipo === 'gol' && `⚽ ${ev.jugador_numero != null ? `#${ev.jugador_numero} ` : ''}${ev.jugador_nombre || 'Jugador'}${ev.en_propia_puerta ? ' (en propia puerta)' : ''}`}
+                  {ev._tipo === 'tarjeta' && `${{ amarilla: '🟨', roja: '🟥', azul: '🟦' }[ev.tipo]} ${ev.jugador_numero != null ? `#${ev.jugador_numero} ` : ''}${ev.jugador_nombre}`}
+                  {ev._tipo === 'cambio' && `🔄 Sale ${ev.jugador_sale_numero != null ? `#${ev.jugador_sale_numero} ` : ''}${ev.jugador_sale_nombre} — Entra ${ev.jugador_entra_numero != null ? `#${ev.jugador_entra_numero} ` : ''}${ev.jugador_entra_nombre}`}
                   {ev._tipo === 'hito' && `🔔 ${ETIQUETA_HITO[ev.tipo]}`}
                 </span>
                 {!soloLectura && ev._tipo !== 'hito' && (
@@ -921,7 +921,7 @@ function ResumenPartido({ datos, onCambio, soloLectura }) {
       <div className="admin-list">
         {goles.map((g) => (
           <div key={g.id} className="admin-item admin-item--estatico">
-            <span>{g.minuto != null ? `${etiquetaMinuto(g.minuto, g.tiempo, g.minuto_adicion)} ` : ''}{g.jugador_nombre || 'Jugador'}{g.en_propia_puerta && ' (en propia puerta)'}</span>
+            <span>{g.minuto != null ? `${etiquetaMinuto(g.minuto, g.tiempo, g.minuto_adicion)} ` : ''}{g.jugador_numero != null && `#${g.jugador_numero} `}{g.jugador_nombre || 'Jugador'}{g.en_propia_puerta && ' (en propia puerta)'}</span>
           </div>
         ))}
         {goles.length === 0 && <p className="admin-empty">No hubo goles.</p>}
@@ -930,7 +930,7 @@ function ResumenPartido({ datos, onCambio, soloLectura }) {
       <div className="admin-list">
         {tarjetas.map((t) => (
           <div key={t.id} className="admin-item admin-item--estatico">
-            <span>{t.minuto != null ? `${etiquetaMinuto(t.minuto, t.tiempo, t.minuto_adicion)} ` : ''}{ICONO_TARJETA[t.tipo]} {t.jugador_nombre}</span>
+            <span>{t.minuto != null ? `${etiquetaMinuto(t.minuto, t.tiempo, t.minuto_adicion)} ` : ''}{ICONO_TARJETA[t.tipo]} {t.jugador_numero != null && `#${t.jugador_numero} `}{t.jugador_nombre}</span>
           </div>
         ))}
         {tarjetas.length === 0 && <p className="admin-empty">No hubo tarjetas.</p>}
@@ -939,7 +939,10 @@ function ResumenPartido({ datos, onCambio, soloLectura }) {
       <div className="admin-list">
         {cambios.map((c) => (
           <div key={c.id} className="admin-item admin-item--estatico">
-            <span>{c.minuto != null ? `${etiquetaMinuto(c.minuto, c.tiempo, c.minuto_adicion)} ` : ''}🔄 Sale {c.jugador_sale_nombre} — Entra {c.jugador_entra_nombre}</span>
+            <span>
+              {c.minuto != null ? `${etiquetaMinuto(c.minuto, c.tiempo, c.minuto_adicion)} ` : ''}
+              🔄 Sale {c.jugador_sale_numero != null && `#${c.jugador_sale_numero} `}{c.jugador_sale_nombre} — Entra {c.jugador_entra_numero != null && `#${c.jugador_entra_numero} `}{c.jugador_entra_nombre}
+            </span>
           </div>
         ))}
         {cambios.length === 0 && <p className="admin-empty">No hubo cambios.</p>}

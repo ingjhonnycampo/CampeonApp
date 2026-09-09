@@ -62,13 +62,13 @@ export default function FilaPartidoPublico({ partido, abierto, onAbrir, fijado, 
         const equipos = `${data.partido.equipo_local_nombre} vs ${data.partido.equipo_visitante_nombre}`;
         const eventos = new Map();
         data.goles.forEach((g) => eventos.set(`gol-${g.id}`, () => onEvento(
-          `⚽ Gol de ${g.jugador_nombre || 'Jugador'}${g.en_propia_puerta ? ' (en propia puerta)' : ''}`, equipos
+          `⚽ Gol de ${g.jugador_numero != null ? `#${g.jugador_numero} ` : ''}${g.jugador_nombre || 'Jugador'}${g.en_propia_puerta ? ' (en propia puerta)' : ''}`, equipos
         )));
         data.tarjetas.forEach((t) => eventos.set(`tar-${t.id}`, () => onEvento(
-          `${ICONO_TARJETA[t.tipo]} Tarjeta ${t.tipo} para ${t.jugador_nombre}`, equipos
+          `${ICONO_TARJETA[t.tipo]} Tarjeta ${t.tipo} para ${t.jugador_numero != null ? `#${t.jugador_numero} ` : ''}${t.jugador_nombre}`, equipos
         )));
         data.cambios.forEach((c) => eventos.set(`cam-${c.id}`, () => onEvento(
-          `Cambio: sale ${c.jugador_sale_nombre}, entra ${c.jugador_entra_nombre}`, equipos, 1, 'cambio'
+          `Cambio: sale ${c.jugador_sale_numero != null ? `#${c.jugador_sale_numero} ` : ''}${c.jugador_sale_nombre}, entra ${c.jugador_entra_numero != null ? `#${c.jugador_entra_numero} ` : ''}${c.jugador_entra_nombre}`, equipos, 1, 'cambio'
         )));
         if (vistosRef.current) {
           eventos.forEach((disparar, clave) => { if (!vistosRef.current.has(clave)) disparar(); });

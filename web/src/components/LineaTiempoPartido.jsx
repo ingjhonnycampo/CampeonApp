@@ -16,12 +16,23 @@ const ETIQUETA_HITO = {
   fin_partido: 'Fin del partido'
 };
 
+// El árbitro/anotador identifica a un jugador por el número de la camiseta
+// mucho más rápido que por el nombre — se antepone a cada nombre donde haya dato.
+function numero(n) {
+  return n != null ? `#${n} ` : '';
+}
+
 function EventoTexto({ ev }) {
-  if (ev._tipo === 'gol') return <>⚽ {ev.jugador_nombre || 'Jugador'}{ev.en_propia_puerta ? ' (en propia puerta)' : ''}</>;
+  if (ev._tipo === 'gol') return <>⚽ {numero(ev.jugador_numero)}{ev.jugador_nombre || 'Jugador'}{ev.en_propia_puerta ? ' (en propia puerta)' : ''}</>;
   if (ev._tipo === 'cambio') {
-    return <><IconoCambio size={14} className="linea-tiempo-icono-cambio" /> {ev.jugador_sale_nombre} <span className="linea-tiempo-flecha">→</span> {ev.jugador_entra_nombre}</>;
+    return (
+      <>
+        <IconoCambio size={14} className="linea-tiempo-icono-cambio" /> {numero(ev.jugador_sale_numero)}{ev.jugador_sale_nombre}{' '}
+        <span className="linea-tiempo-flecha">→</span> {numero(ev.jugador_entra_numero)}{ev.jugador_entra_nombre}
+      </>
+    );
   }
-  return <>{ICONO_TARJETA[ev.tipo]} {ev.jugador_nombre}</>;
+  return <>{ICONO_TARJETA[ev.tipo]} {numero(ev.jugador_numero)}{ev.jugador_nombre}</>;
 }
 
 function FilaHito({ hito }) {
