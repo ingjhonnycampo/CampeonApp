@@ -17,8 +17,8 @@ async function armarPartidoListo() {
     [eA.id, 'ced-' + Math.random()]
   );
   const { rows: [p] } = await pool.query(
-    `INSERT INTO partidos (torneo_id, jornada, equipo_local_id, equipo_visitante_id, estado, fecha_hora)
-     VALUES ($1, 1, $2, $3, 'programado', now() - interval '5 minutes') RETURNING id`,
+    `INSERT INTO partidos (torneo_id, jornada, equipo_local_id, equipo_visitante_id, estado, fecha_hora, confirmado_local, confirmado_visitante)
+     VALUES ($1, 1, $2, $3, 'programado', now() - interval '5 minutes', true, true) RETURNING id`,
     [t.id, eA.id, eB.id]
   );
   return { torneoId: t.id, partidoId: p.id, jugadorId: j.id };

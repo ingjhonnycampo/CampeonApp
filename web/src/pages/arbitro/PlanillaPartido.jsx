@@ -86,7 +86,9 @@ function IniciarMicrofutbol({ datos, onListo, soloLectura }) {
   const modal = useModal();
   const { partido, convocadosLocal, convocadosVisitante } = datos;
   const [iniciando, setIniciando] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
   const habilitado = puedeIniciarYa(partido);
+  const ambosConfirmados = partido.confirmado_local && partido.confirmado_visitante;
 
   async function iniciar() {
     setIniciando(true);
@@ -100,10 +102,29 @@ function IniciarMicrofutbol({ datos, onListo, soloLectura }) {
     }
   }
 
-  function ListaEquipo({ titulo, jugadores }) {
+  async function confirmarEquipo(lado) {
+    setConfirmando(true);
+    try {
+      await api(`/planilla/${partido.id}/confirmar-equipo`, { method: 'POST', body: JSON.stringify({ lado }) });
+      await onListo();
+    } catch (err) {
+      await modal.error(err.message, 'No se pudo confirmar el equipo');
+    } finally {
+      setConfirmando(false);
+    }
+  }
+
+  function ListaEquipo({ titulo, equipoId, jugadores }) {
+    const lado = equipoId === partido.equipo_local_id ? 'local' : 'visitante';
+    const firmaOk = !!(lado === 'local' ? partido.firma_delegado_local : partido.firma_delegado_visitante);
+    const confirmado = lado === 'local' ? partido.confirmado_local : partido.confirmado_visitante;
     return (
       <section className="admin-card">
-        <h2>{titulo}</h2>
+        <h2>{titulo}{confirmado && <span className="admin-badge-sorteado" style={{ marginLeft: 8 }}>Confirmado</span>}</h2>
+        <PanelFirmaDelegado
+          titulo={`Firma del delegado — ${titulo}`}
+          lado={lado} partido={partido} onCambio={onListo} soloLectura={soloLectura}
+        />
         <div className="admin-list admin-list--alta">
           {jugadores.map((j) => (
             <div key={j.id} className="admin-item admin-item--estatico">
@@ -115,6 +136,14 @@ function IniciarMicrofutbol({ datos, onListo, soloLectura }) {
           ))}
           {jugadores.length === 0 && <p className="admin-empty">Este equipo todavía no tiene jugadores validados.</p>}
         </div>
+        {!soloLectura && !confirmado && (
+          <>
+            <button type="button" className="subida-imagen-btn" onClick={() => confirmarEquipo(lado)} disabled={confirmando || !firmaOk}>
+              Confirmar equipo
+            </button>
+            {!firmaOk && <p className="admin-empty">El delegado debe firmar la planilla antes de confirmar el equipo.</p>}
+          </>
+        )}
       </section>
     );
   }
@@ -123,17 +152,20 @@ function IniciarMicrofutbol({ datos, onListo, soloLectura }) {
     <>
       <p className="admin-empty">Microfútbol: no se maneja alineación titular/suplente — los cambios son ilimitados durante el partido.</p>
       <div className="planilla-equipos-grid">
-        <ListaEquipo titulo={partido.equipo_local_nombre} jugadores={convocadosLocal} />
-        <ListaEquipo titulo={partido.equipo_visitante_nombre} jugadores={convocadosVisitante} />
+        <ListaEquipo titulo={partido.equipo_local_nombre} equipoId={partido.equipo_local_id} jugadores={convocadosLocal} />
+        <ListaEquipo titulo={partido.equipo_visitante_nombre} equipoId={partido.equipo_visitante_id} jugadores={convocadosVisitante} />
       </div>
       <section className="admin-card">
         <AvisoHorario partido={partido} />
         {soloLectura ? (
           <p className="admin-empty">Solo el árbitro/anotador puede iniciar este partido.</p>
         ) : (
-          <button type="button" className="subida-imagen-btn" onClick={iniciar} disabled={!habilitado || iniciando}>
-            {iniciando ? 'Iniciando...' : 'Iniciar partido'}
-          </button>
+          <>
+            <button type="button" className="subida-imagen-btn" onClick={iniciar} disabled={!habilitado || !ambosConfirmados || iniciando}>
+              {iniciando ? 'Iniciando...' : 'Iniciar partido'}
+            </button>
+            {!ambosConfirmados && <p className="admin-empty">Confirma los dos equipos para poder iniciar.</p>}
+          </>
         )}
       </section>
     </>
@@ -206,9 +238,15 @@ function ArmarAlineacion({ datos, onListo, soloLectura }) {
   function EquipoAlineacion({ titulo, equipoId, jugadores }) {
     const yaGuardada = datos.alineacion.some((a) => a.equipo_id === equipoId);
     const cantidadTitulares = contarTitulares(jugadores);
+    const lado = equipoId === partido.equipo_local_id ? 'local' : 'visitante';
+    const firmaOk = !!(lado === 'local' ? partido.firma_delegado_local : partido.firma_delegado_visitante);
     return (
       <section className="admin-card">
         <h2>{titulo}{yaGuardada && <span className="admin-badge-sorteado" style={{ marginLeft: 8 }}>Guardada</span>}</h2>
+        <PanelFirmaDelegado
+          titulo={`Firma del delegado — ${titulo}`}
+          lado={lado} partido={partido} onCambio={onListo} soloLectura={soloLectura}
+        />
         <p className={'admin-empty' + (cantidadTitulares >= maxTitulares ? ' planilla-titulares-completo' : '')}>
           {cantidadTitulares} de {maxTitulares} titulares{cantidadTitulares >= maxTitulares ? ' — ¡completo!' : ''}
         </p>
@@ -237,9 +275,12 @@ function ArmarAlineacion({ datos, onListo, soloLectura }) {
           ))}
         </div>
         {!soloLectura && (
-          <button type="button" className="subida-imagen-btn" onClick={() => guardarEquipo(equipoId, jugadores)} disabled={guardando}>
-            Guardar alineación de {titulo}
-          </button>
+          <>
+            <button type="button" className="subida-imagen-btn" onClick={() => guardarEquipo(equipoId, jugadores)} disabled={guardando || !firmaOk}>
+              Guardar alineación de {titulo}
+            </button>
+            {!firmaOk && <p className="admin-empty">El delegado debe firmar la planilla antes de guardar la alineación.</p>}
+          </>
         )}
       </section>
     );
@@ -820,15 +861,6 @@ function ResumenPartido({ datos, onCambio, soloLectura }) {
         ))}
         {cambios.length === 0 && <p className="admin-empty">No hubo cambios.</p>}
       </div>
-
-      <PanelFirmaDelegado
-        titulo={`Firma del delegado — ${partido.equipo_local_nombre}`}
-        lado="local" partido={partido} onCambio={onCambio} soloLectura={soloLectura}
-      />
-      <PanelFirmaDelegado
-        titulo={`Firma del delegado — ${partido.equipo_visitante_nombre}`}
-        lado="visitante" partido={partido} onCambio={onCambio} soloLectura={soloLectura}
-      />
 
       <h3>Firma del árbitro/anotador</h3>
       {partido.firma_arbitro ? (

@@ -156,6 +156,10 @@ router.put('/:id/alineacion', requireAuth, requireAccesoTorneo((req) => obtenerT
   if (equiposBloqueados.has(Number(equipo_id))) {
     return res.status(400).json({ error: 'Este equipo tiene una multa de expulsión sin pagar — no puede jugar hasta que se confirme el pago' });
   }
+  const lado = Number(equipo_id) === partido.equipo_local_id ? 'local' : 'visitante';
+  if (!partido[lado === 'local' ? 'firma_delegado_local' : 'firma_delegado_visitante']) {
+    return res.status(400).json({ error: 'El delegado de este equipo debe firmar la planilla antes de guardar la alineación' });
+  }
   const repetidos = titulares.filter((id) => suplentes.includes(id));
   if (repetidos.length > 0) return res.status(400).json({ error: 'Un jugador no puede estar de titular y de suplente a la vez' });
   const tope = maxTitulares(partido.modalidad);
@@ -220,6 +224,8 @@ router.post('/:id/iniciar', requireAuth, requireAccesoTorneo((req) => obtenerTor
     if (!equiposConAlineacion.has(partido.equipo_local_id) || !equiposConAlineacion.has(partido.equipo_visitante_id)) {
       return res.status(400).json({ error: 'Falta armar la alineación titular de alguno de los dos equipos' });
     }
+  } else if (!partido.confirmado_local || !partido.confirmado_visitante) {
+    return res.status(400).json({ error: 'Falta confirmar alguno de los dos equipos' });
   }
 
   const { rows } = await pool.query(
@@ -580,9 +586,10 @@ router.post('/:id/firma', requireAuth, requireAccesoTorneo((req) => obtenerTorne
   res.json(rows[0]);
 }));
 
-// Firma de cada delegado de equipo certificando la planilla — mismo dispositivo
-// del árbitro (los delegados no inician sesión aparte para esto), una sola vez
-// por lado y solo si el partido ya está jugado.
+// Firma de cada delegado de equipo certificando la planilla ANTES de iniciar el
+// partido — mismo dispositivo del árbitro (los delegados no inician sesión
+// aparte para esto), una sola vez por lado. Es requisito para poder guardar la
+// alineación de ese equipo (fútbol) o confirmarlo (microfútbol).
 router.post('/:id/firma-delegado', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePartido(req.params.id)), soloArbitro, asyncHandler(async (req, res) => {
   const { lado, firma, firmante_nombre } = req.body;
   if (!['local', 'visitante'].includes(lado)) {
@@ -598,7 +605,9 @@ router.post('/:id/firma-delegado', requireAuth, requireAccesoTorneo((req) => obt
   const { rows: partidoRows } = await pool.query('SELECT * FROM partidos WHERE id = $1', [req.params.id]);
   const partido = partidoRows[0];
   if (!partido) return res.status(404).json({ error: 'Partido no encontrado' });
-  if (partido.estado !== 'jugado') return res.status(400).json({ error: 'El partido tiene que estar finalizado para firmarlo' });
+  if (!['programado', 'reprogramado'].includes(partido.estado)) {
+    return res.status(400).json({ error: 'La firma del delegado se hace antes de iniciar el partido' });
+  }
 
   const columnaFirma = lado === 'local' ? 'firma_delegado_local' : 'firma_delegado_visitante';
   const columnaNombre = lado === 'local' ? 'firmante_delegado_local' : 'firmante_delegado_visitante';
@@ -610,6 +619,33 @@ router.post('/:id/firma-delegado', requireAuth, requireAccesoTorneo((req) => obt
     [firma, firmante_nombre.trim(), req.params.id]
   );
   await registrar(pool, { torneoId: partido.torneo_id, usuarioId: req.usuario.id, accion: `Firmó la planilla el delegado ${lado === 'local' ? 'local' : 'visitante'}` });
+
+  res.json(rows[0]);
+}));
+
+// Confirma un equipo antes de iniciar — solo hace falta en modalidades sin
+// alineación formal (microfútbol), donde no hay otro paso que sirva como
+// confirmación. Requiere que ese delegado ya haya firmado.
+router.post('/:id/confirmar-equipo', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePartido(req.params.id)), soloArbitro, asyncHandler(async (req, res) => {
+  const { lado } = req.body;
+  if (!['local', 'visitante'].includes(lado)) {
+    return res.status(400).json({ error: 'lado debe ser "local" o "visitante"' });
+  }
+
+  const { rows: partidoRows } = await pool.query('SELECT * FROM partidos WHERE id = $1', [req.params.id]);
+  const partido = partidoRows[0];
+  if (!partido) return res.status(404).json({ error: 'Partido no encontrado' });
+  if (!['programado', 'reprogramado'].includes(partido.estado)) {
+    return res.status(400).json({ error: 'Este partido ya no está en la etapa previa al inicio' });
+  }
+
+  const columnaFirma = lado === 'local' ? 'firma_delegado_local' : 'firma_delegado_visitante';
+  if (!partido[columnaFirma]) {
+    return res.status(400).json({ error: 'El delegado de este equipo debe firmar la planilla antes de confirmar' });
+  }
+
+  const columnaConfirmado = lado === 'local' ? 'confirmado_local' : 'confirmado_visitante';
+  const { rows } = await pool.query(`UPDATE partidos SET ${columnaConfirmado} = true WHERE id = $1 RETURNING *`, [req.params.id]);
 
   res.json(rows[0]);
 }));

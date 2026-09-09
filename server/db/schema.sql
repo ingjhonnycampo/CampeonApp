@@ -213,16 +213,21 @@ CREATE TABLE IF NOT EXISTS partidos (
   firmante_nombre TEXT, -- nombre de la persona que realmente firmo (puede no ser el nombre de la cuenta)
   firmado_en TIMESTAMPTZ,
   observaciones_arbitro TEXT,
-  -- Firma de cada delegado de equipo certificando la planilla, capturada en el
-  -- mismo dispositivo del árbitro (los delegados no tienen una sesión propia
-  -- para esto). Igual que la firma del árbitro: una sola vez, solo si el
-  -- partido ya está jugado.
+  -- Firma de cada delegado de equipo certificando la planilla ANTES de iniciar
+  -- el partido (no al final) — se captura en el mismo dispositivo del árbitro
+  -- (los delegados no tienen una sesión propia para esto), una sola vez, y es
+  -- requisito para poder confirmar/guardar la alineación de ese equipo.
   firma_delegado_local TEXT,
   firmante_delegado_local TEXT,
   firmado_delegado_local_en TIMESTAMPTZ,
   firma_delegado_visitante TEXT,
   firmante_delegado_visitante TEXT,
   firmado_delegado_visitante_en TIMESTAMPTZ,
+  -- Confirmación del equipo antes de iniciar (solo aplica donde no hay alineación
+  -- formal, ej. microfútbol — en fútbol la alineación guardada ya cumple ese rol).
+  -- Requiere que el delegado ya haya firmado.
+  confirmado_local BOOLEAN NOT NULL DEFAULT false,
+  confirmado_visitante BOOLEAN NOT NULL DEFAULT false,
   jugado_desde TIMESTAMPTZ, -- hora real en que se le dio "Iniciar partido" (no la programada)
   jugado_hasta TIMESTAMPTZ, -- hora real en que se finalizo
   -- Segundos realmente jugados en el primer tiempo (puede ser menos o mas que

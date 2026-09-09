@@ -14,13 +14,13 @@ async function armarTorneo() {
     [eA.id, 'ced-' + Math.random()]
   );
   const { rows: [p1] } = await pool.query(
-    `INSERT INTO partidos (torneo_id, jornada, equipo_local_id, equipo_visitante_id, estado, fecha_hora)
-     VALUES ($1, 1, $2, $3, 'programado', now() - interval '1 hour') RETURNING id`,
+    `INSERT INTO partidos (torneo_id, jornada, equipo_local_id, equipo_visitante_id, estado, fecha_hora, confirmado_local, confirmado_visitante)
+     VALUES ($1, 1, $2, $3, 'programado', now() - interval '1 hour', true, true) RETURNING id`,
     [t.id, eA.id, eB.id]
   );
   const { rows: [p2] } = await pool.query(
-    `INSERT INTO partidos (torneo_id, jornada, equipo_local_id, equipo_visitante_id, estado, fecha_hora)
-     VALUES ($1, 2, $2, $3, 'programado', now()) RETURNING id`,
+    `INSERT INTO partidos (torneo_id, jornada, equipo_local_id, equipo_visitante_id, estado, fecha_hora, confirmado_local, confirmado_visitante)
+     VALUES ($1, 2, $2, $3, 'programado', now(), true, true) RETURNING id`,
     [t.id, eB.id, eA.id]
   );
   return { torneoId: t.id, equipoAId: eA.id, equipoBId: eB.id, jugadorId: j.id, partido1Id: p1.id, partido2Id: p2.id };
