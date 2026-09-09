@@ -189,8 +189,8 @@ router.get('/:id/sorteos', requireAuth, requireAccesoTorneo((req) => req.params.
 router.post('/', requireAuth, requireRole('admin'), asyncHandler(async (req, res) => {
   const {
     nombre, modalidad, duracion_tiempo_1, duracion_tiempo_2, fecha_inicio, fecha_fin, logo_url,
-    inscripciones_desde, inscripciones_hasta, max_jugadores, min_jugadores, organizador, telefono_organizador, reglas,
-    reglas_sancion
+    inscripciones_desde, inscripciones_hasta, max_jugadores, min_jugadores, organizador, telefono_organizador,
+    grupo_whatsapp, reglas, reglas_sancion
   } = req.body;
 
   if (!nombre || !modalidad) {
@@ -203,11 +203,11 @@ router.post('/', requireAuth, requireRole('admin'), asyncHandler(async (req, res
   const slug = await generarSlugUnico(nombre);
 
   const { rows } = await pool.query(
-    `INSERT INTO torneos (nombre, slug, modalidad, duracion_tiempo_1, duracion_tiempo_2, fecha_inicio, fecha_fin, logo_url, inscripciones_desde, inscripciones_hasta, max_jugadores, min_jugadores, organizador, telefono_organizador)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+    `INSERT INTO torneos (nombre, slug, modalidad, duracion_tiempo_1, duracion_tiempo_2, fecha_inicio, fecha_fin, logo_url, inscripciones_desde, inscripciones_hasta, max_jugadores, min_jugadores, organizador, telefono_organizador, grupo_whatsapp)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
     [nombre, slug, modalidad, duracion_tiempo_1 || 45, duracion_tiempo_2 || 45, fecha_inicio || null, fecha_fin || null,
      logo_url || null, inscripciones_desde || null, inscripciones_hasta || null, max_jugadores || 10, min_jugadores || 7,
-     organizador || null, telefono_organizador || null]
+     organizador || null, telefono_organizador || null, grupo_whatsapp || null]
   );
   const torneo = rows[0];
 
@@ -232,8 +232,8 @@ router.post('/', requireAuth, requireRole('admin'), asyncHandler(async (req, res
 router.patch('/:id', requireAuth, requireAccesoTorneo((req) => req.params.id, ['organizador']), asyncHandler(async (req, res) => {
   const {
     nombre, modalidad, duracion_tiempo_1, duracion_tiempo_2, fecha_inicio, fecha_fin, logo_url,
-    inscripciones_desde, inscripciones_hasta, max_jugadores, min_jugadores, organizador, telefono_organizador, reglas,
-    reglas_sancion
+    inscripciones_desde, inscripciones_hasta, max_jugadores, min_jugadores, organizador, telefono_organizador,
+    grupo_whatsapp, reglas, reglas_sancion
   } = req.body;
 
   if (!nombre || !modalidad) {
@@ -246,11 +246,11 @@ router.patch('/:id', requireAuth, requireAccesoTorneo((req) => req.params.id, ['
   const { rows } = await pool.query(
     `UPDATE torneos SET nombre = $1, modalidad = $2, duracion_tiempo_1 = $3, duracion_tiempo_2 = $4,
        fecha_inicio = $5, fecha_fin = $6, logo_url = $7, inscripciones_desde = $8, inscripciones_hasta = $9,
-       max_jugadores = $10, min_jugadores = $11, organizador = $12, telefono_organizador = $13
-     WHERE id = $14 RETURNING *`,
+       max_jugadores = $10, min_jugadores = $11, organizador = $12, telefono_organizador = $13, grupo_whatsapp = $14
+     WHERE id = $15 RETURNING *`,
     [nombre, modalidad, duracion_tiempo_1 || 45, duracion_tiempo_2 || 45, fecha_inicio || null, fecha_fin || null,
      logo_url || null, inscripciones_desde || null, inscripciones_hasta || null, max_jugadores || 10, min_jugadores || 7,
-     organizador || null, telefono_organizador || null, req.params.id]
+     organizador || null, telefono_organizador || null, grupo_whatsapp || null, req.params.id]
   );
   const torneo = rows[0];
   if (!torneo) return res.status(404).json({ error: 'Torneo no encontrado' });

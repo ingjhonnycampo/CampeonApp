@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS torneos (
   min_jugadores INTEGER NOT NULL DEFAULT 7,
   organizador TEXT,
   telefono_organizador TEXT,
+  grupo_whatsapp TEXT, -- enlace de invitación al grupo de WhatsApp de delegados, mostrado en inscripciones
   -- Toda esta configuracion se define de una sola vez al generar el fixture
   -- (endpoint POST /torneos/:id/generar-fixture) y se bloquea apenas se juega el
   -- primer partido: liga o grupos, cuantos grupos/clasifican/mejores terceros, si

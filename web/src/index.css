@@ -1951,6 +1951,10 @@ h1, h2, h3 {
 }
 
 .organiza-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   text-align: center;
   font-size: 0.78rem;
   color: var(--ink-muted);
@@ -1959,8 +1963,35 @@ h1, h2, h3 {
   border-top: 1px solid var(--line);
 }
 
+.organiza-info p {
+  margin: 0;
+}
+
 .organiza-info strong {
   color: var(--ink);
+}
+
+.organiza-info-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #128c46;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.organiza-info-whatsapp-icono {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.organiza-info-grupo {
+  background: rgba(37, 211, 102, 0.12);
+  border: 1px solid rgba(37, 211, 102, 0.35);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 0.85rem;
 }
 
 .admin-jugador-edicion {

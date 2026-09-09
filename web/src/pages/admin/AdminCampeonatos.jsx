@@ -212,6 +212,7 @@ const SUGERIDOS_POR_MODALIDAD = {
 const FORM_VACIO = {
   nombre: '', modalidad: 'futbol', duracion_tiempo_1: 45, duracion_tiempo_2: 45, logo_url: '',
   fecha_inicio: '', fecha_fin: '', inscripciones_desde: '', inscripciones_hasta: '', organizador: '', telefono_organizador: '',
+  grupo_whatsapp: '',
   ...SUGERIDOS_POR_MODALIDAD.futbol
 };
 
@@ -271,7 +272,7 @@ function SeccionCampeonatos({ torneos, activo, onSelect, onGuardar, puedeCrear }
       fecha_fin: t.fecha_fin ? t.fecha_fin.slice(0, 10) : '',
       inscripciones_desde: paraInput(t.inscripciones_desde), inscripciones_hasta: paraInput(t.inscripciones_hasta),
       max_jugadores: t.max_jugadores || 10, min_jugadores: t.min_jugadores || 7,
-      organizador: t.organizador || '', telefono_organizador: t.telefono_organizador || ''
+      organizador: t.organizador || '', telefono_organizador: t.telefono_organizador || '', grupo_whatsapp: t.grupo_whatsapp || ''
     });
     const reglasExistentes = await api(`/torneos/${t.id}/reglas`);
     setReglas(reglasExistentes);
@@ -398,6 +399,13 @@ function SeccionCampeonatos({ torneos, activo, onSelect, onGuardar, puedeCrear }
             <input value={form.telefono_organizador} onChange={(e) => setForm({ ...form, telefono_organizador: e.target.value })} />
           </label>
         </div>
+        <label>Enlace del grupo de WhatsApp de delegados
+          <input
+            value={form.grupo_whatsapp}
+            onChange={(e) => setForm({ ...form, grupo_whatsapp: e.target.value })}
+            placeholder="https://chat.whatsapp.com/..."
+          />
+        </label>
 
         <div className="admin-reglas">
           <span className="subida-imagen-label">Condiciones de edad</span>
