@@ -68,7 +68,7 @@ export default function FilaPartidoPublico({ partido, abierto, onAbrir, fijado, 
           `${ICONO_TARJETA[t.tipo]} Tarjeta ${t.tipo} para ${t.jugador_nombre}`, equipos
         )));
         data.cambios.forEach((c) => eventos.set(`cam-${c.id}`, () => onEvento(
-          `🔄 Cambio: sale ${c.jugador_sale_nombre}, entra ${c.jugador_entra_nombre}`, equipos
+          `Cambio: sale ${c.jugador_sale_nombre}, entra ${c.jugador_entra_nombre}`, equipos, 1, 'cambio'
         )));
         if (vistosRef.current) {
           eventos.forEach((disparar, clave) => { if (!vistosRef.current.has(clave)) disparar(); });

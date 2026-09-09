@@ -1,3 +1,5 @@
+import IconoCambio from './IconoCambio';
+
 // "20'" en tiempo regular, o "20+3'" si ocurrió en tiempo de adición (ver
 // minuto_adicion en el servidor: server/routes/planilla.js).
 function etiquetaMinuto(minuto, minutoAdicion) {
@@ -16,7 +18,9 @@ const ETIQUETA_HITO = {
 
 function EventoTexto({ ev }) {
   if (ev._tipo === 'gol') return <>⚽ {ev.jugador_nombre || 'Jugador'}{ev.en_propia_puerta ? ' (en propia puerta)' : ''}</>;
-  if (ev._tipo === 'cambio') return <>🔄 {ev.jugador_sale_nombre} <span className="linea-tiempo-flecha">→</span> {ev.jugador_entra_nombre}</>;
+  if (ev._tipo === 'cambio') {
+    return <><IconoCambio size={14} className="linea-tiempo-icono-cambio" /> {ev.jugador_sale_nombre} <span className="linea-tiempo-flecha">→</span> {ev.jugador_entra_nombre}</>;
+  }
   return <>{ICONO_TARJETA[ev.tipo]} {ev.jugador_nombre}</>;
 }
 

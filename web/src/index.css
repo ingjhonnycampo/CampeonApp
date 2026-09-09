@@ -3809,6 +3809,17 @@ h1, h2, h3 {
   color: #fff;
 }
 
+.publico-pitido-icono--cambio {
+  background: #fff;
+  border-radius: 50%;
+  padding: 3px;
+  box-sizing: content-box;
+}
+
+.linea-tiempo-icono-cambio {
+  vertical-align: -2px;
+}
+
 @keyframes publico-pitido-entra {
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }

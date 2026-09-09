@@ -85,10 +85,10 @@ export function usePitidos() {
   const estadosPrevios = useRef({});
   const [avisos, setAvisos] = useState([]);
 
-  const anunciar = useCallback((texto, equipos, cantidad = 1) => {
+  const anunciar = useCallback((texto, equipos, cantidad = 1, tipo = 'evento') => {
     sonarPitido(cantidad);
     const id = `${Math.random().toString(36).slice(2)}-${Date.now()}`;
-    setAvisos((actuales) => [...actuales, { id, texto, equipos }]);
+    setAvisos((actuales) => [...actuales, { id, texto, equipos, tipo }]);
     setTimeout(() => setAvisos((actuales) => actuales.filter((a) => a.id !== id)), 6000);
   }, []);
 
