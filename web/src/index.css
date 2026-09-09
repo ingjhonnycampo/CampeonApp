@@ -2905,6 +2905,27 @@ h1, h2, h3 {
   font-size: 1rem;
 }
 
+.planilla-numero-input {
+  flex-shrink: 0;
+  width: 44px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 1rem;
+  -moz-appearance: textfield;
+}
+
+.planilla-numero-input::-webkit-outer-spin-button,
+.planilla-numero-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .planilla-jugador-info {
   flex: 1 1 140px;
   font-size: 0.85rem;

@@ -254,6 +254,18 @@ CREATE TABLE IF NOT EXISTS partido_alineacion (
   UNIQUE (partido_id, jugador_id)
 );
 
+-- Número de camiseta que un jugador usa EN ESE PARTIDO puntual, por si difiere
+-- del número con el que quedó inscrito (se confirma/corrige al armar la
+-- planilla) — no altera el número de inscripción del jugador, solo cómo se
+-- muestra y se busca en la planilla y el informe de este partido.
+CREATE TABLE IF NOT EXISTS partido_numero_camiseta (
+  id SERIAL PRIMARY KEY,
+  partido_id INTEGER NOT NULL REFERENCES partidos(id) ON DELETE CASCADE,
+  jugador_id INTEGER NOT NULL REFERENCES jugadores(id) ON DELETE CASCADE,
+  numero INTEGER NOT NULL,
+  UNIQUE (partido_id, jugador_id)
+);
+
 -- Goles anotados durante el partido, con jugador y minuto (para la tabla de
 -- goleadores). equipo_id es el equipo al que le CUENTA el gol (si es en propia
 -- puerta, es el equipo RIVAL del jugador que la metio).

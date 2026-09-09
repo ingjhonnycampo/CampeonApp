@@ -424,22 +424,26 @@ router.get('/partidos/:id', asyncHandler(async (req, res) => {
   if (!partido) return res.status(404).json({ error: 'Partido no encontrado' });
 
   const { rows: goles } = await pool.query(
-    `SELECT g.id, g.equipo_id, g.jugador_id, g.minuto, g.minuto_adicion, g.tiempo, g.en_propia_puerta, j.nombre AS jugador_nombre, j.numero_camiseta AS jugador_numero
+    `SELECT g.id, g.equipo_id, g.jugador_id, g.minuto, g.minuto_adicion, g.tiempo, g.en_propia_puerta, j.nombre AS jugador_nombre, COALESCE(pn.numero, j.numero_camiseta) AS jugador_numero
      FROM partido_goles g LEFT JOIN jugadores j ON j.id = g.jugador_id
+     LEFT JOIN partido_numero_camiseta pn ON pn.jugador_id = j.id AND pn.partido_id = g.partido_id
      WHERE g.partido_id = $1 ORDER BY g.tiempo NULLS LAST, g.minuto NULLS LAST, g.id`,
     [req.params.id]
   );
   const { rows: tarjetas } = await pool.query(
-    `SELECT t.id, t.equipo_id, t.jugador_id, t.minuto, t.minuto_adicion, t.tiempo, t.tipo, j.nombre AS jugador_nombre, j.numero_camiseta AS jugador_numero
+    `SELECT t.id, t.equipo_id, t.jugador_id, t.minuto, t.minuto_adicion, t.tiempo, t.tipo, j.nombre AS jugador_nombre, COALESCE(pn.numero, j.numero_camiseta) AS jugador_numero
      FROM partido_tarjetas t JOIN jugadores j ON j.id = t.jugador_id
+     LEFT JOIN partido_numero_camiseta pn ON pn.jugador_id = j.id AND pn.partido_id = t.partido_id
      WHERE t.partido_id = $1 ORDER BY t.tiempo NULLS LAST, t.minuto NULLS LAST, t.id`,
     [req.params.id]
   );
   const { rows: cambios } = await pool.query(
     `SELECT c.id, c.equipo_id, c.minuto, c.minuto_adicion, c.tiempo,
-            js.nombre AS jugador_sale_nombre, js.numero_camiseta AS jugador_sale_numero,
-            je.nombre AS jugador_entra_nombre, je.numero_camiseta AS jugador_entra_numero
+            js.nombre AS jugador_sale_nombre, COALESCE(pns.numero, js.numero_camiseta) AS jugador_sale_numero,
+            je.nombre AS jugador_entra_nombre, COALESCE(pne.numero, je.numero_camiseta) AS jugador_entra_numero
      FROM partido_cambios c JOIN jugadores js ON js.id = c.jugador_sale_id JOIN jugadores je ON je.id = c.jugador_entra_id
+     LEFT JOIN partido_numero_camiseta pns ON pns.jugador_id = js.id AND pns.partido_id = c.partido_id
+     LEFT JOIN partido_numero_camiseta pne ON pne.jugador_id = je.id AND pne.partido_id = c.partido_id
      WHERE c.partido_id = $1 ORDER BY c.tiempo NULLS LAST, c.minuto NULLS LAST, c.id`,
     [req.params.id]
   );

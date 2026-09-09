@@ -94,13 +94,21 @@ router.get('/:id', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePa
     return res.status(400).json({ error: 'Todavía no se sabe qué equipos juegan este partido' });
   }
 
+  // El número de camiseta que se muestra es el confirmado para ESTE partido si el
+  // árbitro lo corrigió (partido_numero_camiseta), o si no el de inscripción.
   const { rows: convocadosLocalRows } = await pool.query(
-    `SELECT id, nombre, numero_camiseta, fecha_nacimiento FROM jugadores WHERE equipo_id = $1 AND estado_validacion != 'rechazado' ORDER BY numero_camiseta NULLS LAST, nombre`,
-    [partido.equipo_local_id]
+    `SELECT j.id, j.nombre, COALESCE(pn.numero, j.numero_camiseta) AS numero_camiseta, j.fecha_nacimiento
+     FROM jugadores j LEFT JOIN partido_numero_camiseta pn ON pn.jugador_id = j.id AND pn.partido_id = $2
+     WHERE j.equipo_id = $1 AND j.estado_validacion != 'rechazado'
+     ORDER BY COALESCE(pn.numero, j.numero_camiseta) NULLS LAST, j.nombre`,
+    [partido.equipo_local_id, req.params.id]
   );
   const { rows: convocadosVisitanteRows } = await pool.query(
-    `SELECT id, nombre, numero_camiseta, fecha_nacimiento FROM jugadores WHERE equipo_id = $1 AND estado_validacion != 'rechazado' ORDER BY numero_camiseta NULLS LAST, nombre`,
-    [partido.equipo_visitante_id]
+    `SELECT j.id, j.nombre, COALESCE(pn.numero, j.numero_camiseta) AS numero_camiseta, j.fecha_nacimiento
+     FROM jugadores j LEFT JOIN partido_numero_camiseta pn ON pn.jugador_id = j.id AND pn.partido_id = $2
+     WHERE j.equipo_id = $1 AND j.estado_validacion != 'rechazado'
+     ORDER BY COALESCE(pn.numero, j.numero_camiseta) NULLS LAST, j.nombre`,
+    [partido.equipo_visitante_id, req.params.id]
   );
   const suspendidos = await jugadoresSuspendidosParaPartido(pool, partido.torneo_id, partido.id);
   const expulsados = await jugadoresExpulsadosDelTorneo(pool, partido.torneo_id);
@@ -117,23 +125,27 @@ router.get('/:id', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePa
 
   const { rows: alineacion } = await pool.query('SELECT * FROM partido_alineacion WHERE partido_id = $1', [req.params.id]);
   const { rows: goles } = await pool.query(
-    `SELECT g.*, j.nombre AS jugador_nombre, j.numero_camiseta AS jugador_numero
+    `SELECT g.*, j.nombre AS jugador_nombre, COALESCE(pn.numero, j.numero_camiseta) AS jugador_numero
      FROM partido_goles g LEFT JOIN jugadores j ON j.id = g.jugador_id
+     LEFT JOIN partido_numero_camiseta pn ON pn.jugador_id = j.id AND pn.partido_id = g.partido_id
      WHERE g.partido_id = $1 ORDER BY g.minuto NULLS LAST, g.id`,
     [req.params.id]
   );
   const { rows: tarjetas } = await pool.query(
-    `SELECT t.*, j.nombre AS jugador_nombre, j.numero_camiseta AS jugador_numero
+    `SELECT t.*, j.nombre AS jugador_nombre, COALESCE(pn.numero, j.numero_camiseta) AS jugador_numero
      FROM partido_tarjetas t JOIN jugadores j ON j.id = t.jugador_id
+     LEFT JOIN partido_numero_camiseta pn ON pn.jugador_id = j.id AND pn.partido_id = t.partido_id
      WHERE t.partido_id = $1 ORDER BY t.minuto NULLS LAST, t.id`,
     [req.params.id]
   );
   const { rows: cambios } = await pool.query(
-    `SELECT c.*, js.nombre AS jugador_sale_nombre, js.numero_camiseta AS jugador_sale_numero,
-            je.nombre AS jugador_entra_nombre, je.numero_camiseta AS jugador_entra_numero
+    `SELECT c.*, js.nombre AS jugador_sale_nombre, COALESCE(pns.numero, js.numero_camiseta) AS jugador_sale_numero,
+            je.nombre AS jugador_entra_nombre, COALESCE(pne.numero, je.numero_camiseta) AS jugador_entra_numero
      FROM partido_cambios c
      JOIN jugadores js ON js.id = c.jugador_sale_id
      JOIN jugadores je ON je.id = c.jugador_entra_id
+     LEFT JOIN partido_numero_camiseta pns ON pns.jugador_id = js.id AND pns.partido_id = c.partido_id
+     LEFT JOIN partido_numero_camiseta pne ON pne.jugador_id = je.id AND pne.partido_id = c.partido_id
      WHERE c.partido_id = $1 ORDER BY c.minuto NULLS LAST, c.id`,
     [req.params.id]
   );
@@ -143,6 +155,29 @@ router.get('/:id', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePa
   );
 
   res.json({ partido, convocadosLocal, convocadosVisitante, alineacion, goles, tarjetas, cambios, hitos, reglasCancha });
+}));
+
+// Confirma o corrige el número de camiseta que un jugador usa EN ESTE partido
+// (puede diferir del que quedó en su inscripción) — no cambia a quién le cuentan
+// los goles/tarjetas, solo cómo se muestra en la planilla y el informe.
+router.put('/:id/numero-camiseta', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePartido(req.params.id)), soloArbitro, asyncHandler(async (req, res) => {
+  const { jugador_id, numero } = req.body;
+  if (!jugador_id || !Number.isInteger(Number(numero)) || Number(numero) < 0) {
+    return res.status(400).json({ error: 'jugador_id y un número de camiseta válido son obligatorios' });
+  }
+
+  const { rows: partidoRows } = await pool.query('SELECT * FROM partidos WHERE id = $1', [req.params.id]);
+  const partido = partidoRows[0];
+  if (!partido) return res.status(404).json({ error: 'Partido no encontrado' });
+  if (partido.estado === 'jugado') return res.status(400).json({ error: 'Este partido ya se jugó' });
+
+  await pool.query(
+    `INSERT INTO partido_numero_camiseta (partido_id, jugador_id, numero) VALUES ($1, $2, $3)
+     ON CONFLICT (partido_id, jugador_id) DO UPDATE SET numero = EXCLUDED.numero`,
+    [req.params.id, jugador_id, numero]
+  );
+
+  res.json({ ok: true });
 }));
 
 // Arma (o reemplaza) la alineación de UN equipo para este partido: titulares y

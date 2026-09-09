@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useModal } from '../../context/ModalContext';
 import CargaJugador from '../../components/CargaJugador';
 import FirmaPad from '../../components/FirmaPad';
+import LineaTiempoPartido from '../../components/LineaTiempoPartido';
 import { maxTitulares as maxTitularesDe, usaAlineacionFormal, permiteTarjetaAzul } from '../../lib/modalidad';
 import { edadSiCumpleRegla } from '../../lib/edad';
 
@@ -16,6 +17,50 @@ function EdadMayor({ jugador, reglasCancha }) {
   const edad = edadSiCumpleRegla(jugador, reglasCancha, new Date());
   if (edad === null) return null;
   return <span className="planilla-edad-mayor">{edad} años</span>;
+}
+
+// El número con el que un jugador quedó inscrito puede no ser el que usa ese día
+// puntual — se puede confirmar/corregir al armar la planilla, sin tocar a quién
+// le cuentan los goles/tarjetas de ese jugador (solo cambia cómo se muestra).
+function NumeroCamisetaInput({ jugador, partido, soloLectura, onGuardado }) {
+  const modal = useModal();
+  const [valor, setValor] = useState(jugador.numero_camiseta ?? '');
+  const [guardando, setGuardando] = useState(false);
+
+  useEffect(() => { setValor(jugador.numero_camiseta ?? ''); }, [jugador.numero_camiseta]);
+
+  async function guardar() {
+    if (valor === '' && jugador.numero_camiseta == null) return;
+    const numero = Number(valor);
+    if (valor === '' || !Number.isInteger(numero) || numero < 0) {
+      await modal.error('Escribe un número de camiseta válido.', 'Número inválido');
+      setValor(jugador.numero_camiseta ?? '');
+      return;
+    }
+    if (numero === jugador.numero_camiseta) return;
+    setGuardando(true);
+    try {
+      await api(`/planilla/${partido.id}/numero-camiseta`, { method: 'PUT', body: JSON.stringify({ jugador_id: jugador.id, numero }) });
+      await onGuardado();
+    } catch (err) {
+      await modal.error(err.message, 'No se pudo guardar el número');
+      setValor(jugador.numero_camiseta ?? '');
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  if (soloLectura) return <span className="planilla-jugador-numero">{jugador.numero_camiseta ?? '-'}</span>;
+
+  return (
+    <input
+      type="number" className="planilla-numero-input" value={valor} disabled={guardando}
+      onChange={(e) => setValor(e.target.value)}
+      onBlur={guardar}
+      onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+      title="Número de camiseta para este partido"
+    />
+  );
 }
 
 export default function PlanillaPartido() {
@@ -114,7 +159,7 @@ function ListaEquipo({ titulo, equipoId, jugadores, partido, reglasCancha, soloL
       <div className="admin-list admin-list--alta">
         {jugadores.map((j) => (
           <div key={j.id} className="admin-item admin-item--estatico">
-            <span><strong>#{j.numero_camiseta ?? '-'}</strong> {j.nombre} <EdadMayor jugador={j} reglasCancha={reglasCancha} /></span>
+            <span>#<NumeroCamisetaInput jugador={j} partido={partido} soloLectura={soloLectura} onGuardado={onListo} /> {j.nombre} <EdadMayor jugador={j} reglasCancha={reglasCancha} /></span>
             {j.expulsado
               ? <span className="planilla-badge-sancionado planilla-badge-sancionado--expulsado">⛔ Expulsado del campeonato</span>
               : j.suspendido && <span className="planilla-badge-sancionado">🚫 Sancionado</span>}
@@ -223,7 +268,7 @@ function EquipoAlineacion({
       <div className="planilla-alineacion-lista">
         {jugadores.map((j) => (
           <div key={j.id} className="planilla-alineacion-fila">
-            <span className="planilla-jugador-numero">{j.numero_camiseta ?? '-'}</span>
+            <NumeroCamisetaInput jugador={j} partido={partido} soloLectura={soloLectura} onGuardado={onListo} />
             <span className="planilla-alineacion-nombre">
               {j.nombre} <EdadMayor jugador={j} reglasCancha={reglasCancha} />
               {j.expulsado
@@ -456,30 +501,10 @@ function Cronometro({ partido, onCambio, soloLectura }) {
 
 const ETIQUETA_TIEMPO_CORTA = { primer_tiempo: 'PT', segundo_tiempo: 'ST' };
 
-const ETIQUETA_HITO = {
-  inicio_partido: 'Inicio del partido',
-  fin_primer_tiempo: 'Fin del primer tiempo',
-  inicio_segundo_tiempo: 'Inicio del segundo tiempo',
-  fin_partido: 'Fin del partido'
-};
-
 function etiquetaMinuto(minuto, tiempo, minutoAdicion) {
   if (minuto == null || !tiempo) return '';
   const min = minutoAdicion != null ? `${minuto}+${minutoAdicion}'` : `${minuto}'`;
   return `${min} ${ETIQUETA_TIEMPO_CORTA[tiempo] || ''}`;
-}
-
-const ORDEN_TIEMPO = { primer_tiempo: 1, segundo_tiempo: 2 };
-
-// Orden cronológico real: primero lo que no tiene tiempo asignado (tarjetas antes
-// de iniciar o en el descanso), luego primer tiempo y segundo tiempo, cada uno por
-// minuto ascendente.
-function ordenarEventos(eventos) {
-  return [...eventos].sort((a, b) => {
-    const ta = ORDEN_TIEMPO[a.tiempo] || 0;
-    const tb = ORDEN_TIEMPO[b.tiempo] || 0;
-    return ta - tb || (a.minuto ?? 0) - (b.minuto ?? 0) || (a.minuto_adicion ?? 0) - (b.minuto_adicion ?? 0) || a.id - b.id;
-  });
 }
 
 function cronometroCorriendo(partido) {
@@ -672,24 +697,15 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
     }
   }
 
-  async function quitarGol(golId) {
-    const confirmado = await modal.confirmar({ titulo: '¿Quitar este gol?', textoAceptar: 'Quitar', peligro: true });
+  async function quitarEvento(tipo, id) {
+    const mensajes = {
+      gol: { titulo: '¿Quitar este gol?', textoAceptar: 'Quitar' },
+      tarjeta: { titulo: '¿Quitar esta tarjeta?', textoAceptar: 'Quitar' },
+      cambio: { titulo: '¿Deshacer este cambio?', textoAceptar: 'Deshacer' }
+    };
+    const confirmado = await modal.confirmar({ ...mensajes[tipo], peligro: true });
     if (!confirmado) return;
-    await api(`/planilla/${partido.id}/gol/${golId}`, { method: 'DELETE' });
-    await onCambio();
-  }
-
-  async function quitarTarjeta(tarjetaId) {
-    const confirmado = await modal.confirmar({ titulo: '¿Quitar esta tarjeta?', textoAceptar: 'Quitar', peligro: true });
-    if (!confirmado) return;
-    await api(`/planilla/${partido.id}/tarjeta/${tarjetaId}`, { method: 'DELETE' });
-    await onCambio();
-  }
-
-  async function quitarCambio(cambioId) {
-    const confirmado = await modal.confirmar({ titulo: '¿Deshacer este cambio?', textoAceptar: 'Deshacer', peligro: true });
-    if (!confirmado) return;
-    await api(`/planilla/${partido.id}/cambio/${cambioId}`, { method: 'DELETE' });
+    await api(`/planilla/${partido.id}/${tipo}/${id}`, { method: 'DELETE' });
     await onCambio();
   }
 
@@ -790,33 +806,10 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
 
       <section className="admin-card">
         <h2>Eventos del partido</h2>
-        <div className="admin-list admin-list--alta">
-          {ordenarEventos([
-            ...goles.map((g) => ({ ...g, _tipo: 'gol' })),
-            ...tarjetas.map((t) => ({ ...t, _tipo: 'tarjeta' })),
-            ...cambios.map((c) => ({ ...c, _tipo: 'cambio' })),
-            ...hitos.map((h) => ({ ...h, _tipo: 'hito' }))
-          ]).map((ev) => (
-              <div key={`${ev._tipo}-${ev.id}`} className="admin-item admin-item--estatico">
-                <span>
-                  {ev.minuto != null ? `${etiquetaMinuto(ev.minuto, ev.tiempo, ev.minuto_adicion)} ` : ''}
-                  {ev._tipo === 'gol' && `⚽ ${ev.jugador_numero != null ? `#${ev.jugador_numero} ` : ''}${ev.jugador_nombre || 'Jugador'}${ev.en_propia_puerta ? ' (en propia puerta)' : ''}`}
-                  {ev._tipo === 'tarjeta' && `${{ amarilla: '🟨', roja: '🟥', azul: '🟦' }[ev.tipo]} ${ev.jugador_numero != null ? `#${ev.jugador_numero} ` : ''}${ev.jugador_nombre}`}
-                  {ev._tipo === 'cambio' && `🔄 Sale ${ev.jugador_sale_numero != null ? `#${ev.jugador_sale_numero} ` : ''}${ev.jugador_sale_nombre} — Entra ${ev.jugador_entra_numero != null ? `#${ev.jugador_entra_numero} ` : ''}${ev.jugador_entra_nombre}`}
-                  {ev._tipo === 'hito' && `🔔 ${ETIQUETA_HITO[ev.tipo]}`}
-                </span>
-                {!soloLectura && ev._tipo !== 'hito' && (
-                  <button
-                    type="button" className="publico-quitar"
-                    onClick={() => (ev._tipo === 'gol' ? quitarGol(ev.id) : ev._tipo === 'tarjeta' ? quitarTarjeta(ev.id) : quitarCambio(ev.id))}
-                  >
-                    Quitar
-                  </button>
-                )}
-              </div>
-            ))}
-          {goles.length === 0 && tarjetas.length === 0 && cambios.length === 0 && <p className="admin-empty">Todavía no hay goles, tarjetas ni cambios.</p>}
-        </div>
+        <LineaTiempoPartido
+          partido={partido} goles={goles} tarjetas={tarjetas} cambios={cambios} hitos={hitos}
+          onQuitar={soloLectura ? undefined : quitarEvento}
+        />
       </section>
 
       {!soloLectura && (
