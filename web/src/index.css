@@ -513,6 +513,30 @@ h1, h2, h3 {
   color: var(--ink-muted);
 }
 
+/* Un <label>Texto <select>...</select></label> suelto (fuera de un .admin-form)
+   se ve bien en escritorio pero en el celular el select toma el ancho de la
+   opción más larga y se sale de la tarjeta — esta clase lo fuerza a quedarse
+   dentro del contenedor. */
+.admin-label-ancho {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+.admin-label-ancho select {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
 .admin-form input,
 .admin-form select {
   padding: 9px 10px;

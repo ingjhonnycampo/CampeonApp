@@ -75,7 +75,7 @@ export default function ArbitroDashboard() {
       />
 
       <section className="admin-card">
-        <label>Campeonato
+        <label className="admin-label-ancho">Campeonato
           <select value={torneoId || ''} onChange={(e) => setTorneoId(Number(e.target.value))}>
             {torneos.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
           </select>
