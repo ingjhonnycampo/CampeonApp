@@ -16,3 +16,13 @@ export function jugadorRequiereValidacion(jugador, reglasPlanilla, fechaReferenc
     return edad !== null && edad >= r.edad_minima;
   });
 }
+
+// Edad del jugador si cumple alguna regla de edad (ej. "mínimo N jugadores de
+// 35+ años en cancha") — para resaltarlo en la planilla del árbitro. Devuelve
+// null si no aplica ninguna regla, así el llamador no muestra nada.
+export function edadSiCumpleRegla(jugador, reglas, fechaReferencia) {
+  const edad = calcularEdad(jugador.fecha_nacimiento, fechaReferencia);
+  if (edad === null) return null;
+  const cumple = (reglas || []).some((r) => edad >= r.edad_minima);
+  return cumple ? edad : null;
+}

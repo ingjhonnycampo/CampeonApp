@@ -95,17 +95,25 @@ router.get('/:id', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePa
   }
 
   const { rows: convocadosLocalRows } = await pool.query(
-    `SELECT id, nombre, numero_camiseta FROM jugadores WHERE equipo_id = $1 AND estado_validacion != 'rechazado' ORDER BY numero_camiseta NULLS LAST, nombre`,
+    `SELECT id, nombre, numero_camiseta, fecha_nacimiento FROM jugadores WHERE equipo_id = $1 AND estado_validacion != 'rechazado' ORDER BY numero_camiseta NULLS LAST, nombre`,
     [partido.equipo_local_id]
   );
   const { rows: convocadosVisitanteRows } = await pool.query(
-    `SELECT id, nombre, numero_camiseta FROM jugadores WHERE equipo_id = $1 AND estado_validacion != 'rechazado' ORDER BY numero_camiseta NULLS LAST, nombre`,
+    `SELECT id, nombre, numero_camiseta, fecha_nacimiento FROM jugadores WHERE equipo_id = $1 AND estado_validacion != 'rechazado' ORDER BY numero_camiseta NULLS LAST, nombre`,
     [partido.equipo_visitante_id]
   );
   const suspendidos = await jugadoresSuspendidosParaPartido(pool, partido.torneo_id, partido.id);
   const expulsados = await jugadoresExpulsadosDelTorneo(pool, partido.torneo_id);
   const convocadosLocal = convocadosLocalRows.map((j) => ({ ...j, suspendido: suspendidos.has(j.id), expulsado: expulsados.has(j.id) }));
   const convocadosVisitante = convocadosVisitanteRows.map((j) => ({ ...j, suspendido: suspendidos.has(j.id), expulsado: expulsados.has(j.id) }));
+
+  // Reglas de edad "en cancha" (ej. mínimo de mayores jugando) — se usan en el
+  // frontend para resaltar en la planilla a los jugadores que cuentan para esa
+  // norma, aunque la modalidad no exija alineación formal ni límite de cambios.
+  const { rows: reglasCancha } = await pool.query(
+    `SELECT edad_minima, cantidad_minima, descripcion FROM reglas_edad WHERE torneo_id = $1 AND ambito = 'cancha'`,
+    [partido.torneo_id]
+  );
 
   const { rows: alineacion } = await pool.query('SELECT * FROM partido_alineacion WHERE partido_id = $1', [req.params.id]);
   const { rows: goles } = await pool.query(
@@ -131,7 +139,7 @@ router.get('/:id', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePa
     [req.params.id]
   );
 
-  res.json({ partido, convocadosLocal, convocadosVisitante, alineacion, goles, tarjetas, cambios, hitos });
+  res.json({ partido, convocadosLocal, convocadosVisitante, alineacion, goles, tarjetas, cambios, hitos, reglasCancha });
 }));
 
 // Arma (o reemplaza) la alineación de UN equipo para este partido: titulares y

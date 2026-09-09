@@ -6,6 +6,17 @@ import { useModal } from '../../context/ModalContext';
 import CargaJugador from '../../components/CargaJugador';
 import FirmaPad from '../../components/FirmaPad';
 import { maxTitulares as maxTitularesDe, usaAlineacionFormal, permiteTarjetaAzul } from '../../lib/modalidad';
+import { edadSiCumpleRegla } from '../../lib/edad';
+
+// Muestra la edad de un jugador en rojo cuando cumple alguna regla de edad "en
+// cancha" del torneo (ej. "mínimo 2 jugadores de 35+ años") — para que el
+// árbitro/anotador lo identifique de un vistazo, sin importar si la modalidad
+// exige alineación formal o los cambios son libres.
+function EdadMayor({ jugador, reglasCancha }) {
+  const edad = edadSiCumpleRegla(jugador, reglasCancha, new Date());
+  if (edad === null) return null;
+  return <span className="planilla-edad-mayor">{edad} años</span>;
+}
 
 export default function PlanillaPartido() {
   const { partidoId } = useParams();
@@ -84,7 +95,7 @@ function PrePartido({ datos, onListo, soloLectura }) {
 
 function IniciarMicrofutbol({ datos, onListo, soloLectura }) {
   const modal = useModal();
-  const { partido, convocadosLocal, convocadosVisitante } = datos;
+  const { partido, convocadosLocal, convocadosVisitante, reglasCancha } = datos;
   const [iniciando, setIniciando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const habilitado = puedeIniciarYa(partido);
@@ -128,7 +139,7 @@ function IniciarMicrofutbol({ datos, onListo, soloLectura }) {
         <div className="admin-list admin-list--alta">
           {jugadores.map((j) => (
             <div key={j.id} className="admin-item admin-item--estatico">
-              <span><strong>#{j.numero_camiseta ?? '-'}</strong> {j.nombre}</span>
+              <span><strong>#{j.numero_camiseta ?? '-'}</strong> {j.nombre} <EdadMayor jugador={j} reglasCancha={reglasCancha} /></span>
               {j.expulsado
                 ? <span className="planilla-badge-sancionado planilla-badge-sancionado--expulsado">⛔ Expulsado del campeonato</span>
                 : j.suspendido && <span className="planilla-badge-sancionado">🚫 Sancionado</span>}
@@ -174,7 +185,7 @@ function IniciarMicrofutbol({ datos, onListo, soloLectura }) {
 
 function ArmarAlineacion({ datos, onListo, soloLectura }) {
   const modal = useModal();
-  const { partido, convocadosLocal, convocadosVisitante } = datos;
+  const { partido, convocadosLocal, convocadosVisitante, reglasCancha } = datos;
   const [seleccion, setSeleccion] = useState({});
   const [guardando, setGuardando] = useState(false);
   const [iniciando, setIniciando] = useState(false);
@@ -255,7 +266,7 @@ function ArmarAlineacion({ datos, onListo, soloLectura }) {
             <div key={j.id} className="planilla-alineacion-fila">
               <span className="planilla-jugador-numero">{j.numero_camiseta ?? '-'}</span>
               <span className="planilla-alineacion-nombre">
-                {j.nombre}
+                {j.nombre} <EdadMayor jugador={j} reglasCancha={reglasCancha} />
                 {j.expulsado
                 ? <span className="planilla-badge-sancionado planilla-badge-sancionado--expulsado">⛔ Expulsado del campeonato</span>
                 : j.suspendido && <span className="planilla-badge-sancionado">🚫 Sancionado</span>}
@@ -443,7 +454,7 @@ function cronometroCorriendo(partido) {
 
 function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
   const modal = useModal();
-  const { partido, alineacion, goles, tarjetas, cambios, hitos, convocadosLocal, convocadosVisitante } = datos;
+  const { partido, alineacion, goles, tarjetas, cambios, hitos, convocadosLocal, convocadosVisitante, reglasCancha } = datos;
   const usaAlineacion = usaAlineacionFormal(partido.modalidad);
   const puedeAnotarGol = cronometroCorriendo(partido) && !soloLectura;
 
@@ -595,7 +606,7 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
       <div className={'planilla-jugador' + (enBanca ? ' planilla-jugador--banca' : '') + (bloqueado ? ' planilla-jugador--expulsado' : '')}>
         <span className="planilla-jugador-numero">{jugador.numero_camiseta ?? '-'}</span>
         <span className="planilla-jugador-info">
-          {jugador.nombre}
+          {jugador.nombre} <EdadMayor jugador={jugador} reglasCancha={reglasCancha} />
           {enBanca && !bloqueado && <em className="planilla-jugador-tag">banca</em>}
           {expulsado && <em className="planilla-jugador-tag planilla-jugador-tag--expulsado">expulsado</em>}
           {!expulsado && azul && <em className="planilla-jugador-tag planilla-jugador-tag--azul">cambio obligatorio</em>}
@@ -644,7 +655,7 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
                   className={'planilla-cambio-jugador' + (saleId === a.jugador_id ? ' planilla-cambio-jugador--elegido' : '')}
                   onClick={() => setSaleId(a.jugador_id)}
                 >
-                  {jugadoresPorId[a.jugador_id]?.nombre}
+                  {jugadoresPorId[a.jugador_id]?.nombre} <EdadMayor jugador={jugadoresPorId[a.jugador_id] || {}} reglasCancha={reglasCancha} />
                 </button>
               ))}
             </div>
@@ -658,7 +669,7 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
                   className="planilla-cambio-jugador"
                   onClick={() => elegirEntra(a.jugador_id)}
                 >
-                  {jugadoresPorId[a.jugador_id]?.nombre}
+                  {jugadoresPorId[a.jugador_id]?.nombre} <EdadMayor jugador={jugadoresPorId[a.jugador_id] || {}} reglasCancha={reglasCancha} />
                 </button>
               ))}
             </div>

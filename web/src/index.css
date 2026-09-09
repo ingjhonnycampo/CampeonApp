@@ -2845,6 +2845,13 @@ h1, h2, h3 {
   background: var(--crit);
 }
 
+.planilla-edad-mayor {
+  color: var(--crit);
+  font-weight: 700;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
 .planilla-cronometro-botones {
   display: flex;
   flex-wrap: wrap;
