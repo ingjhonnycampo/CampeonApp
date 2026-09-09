@@ -408,6 +408,30 @@ router.post('/:id/cronometro/finalizar-tiempo', requireAuth, requireAccesoTorneo
   res.json(actualizado);
 }));
 
+// Abre un partido para cargarlo DESPUÉS de jugado (ej. se jugó sin conexión a
+// internet y se llevó una planilla de respaldo en papel). Queda "en_curso" con
+// el cronómetro ya en "finalizado" (no aplica), para poder anotar goles y
+// tarjetas sin depender de un cronómetro real ni de minutos exactos — la
+// prioridad es que goleadores y sanciones queden completos, no el minuto.
+router.post('/:id/cargar-retroactivo', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePartido(req.params.id)), soloArbitro, asyncHandler(async (req, res) => {
+  const { rows: partidoRows } = await pool.query('SELECT * FROM partidos WHERE id = $1', [req.params.id]);
+  const partido = partidoRows[0];
+  if (!partido) return res.status(404).json({ error: 'Partido no encontrado' });
+  if (!['programado', 'reprogramado'].includes(partido.estado)) {
+    return res.status(400).json({ error: 'Este partido ya se está jugando o ya quedó cargado' });
+  }
+
+  const { rows } = await pool.query(
+    `UPDATE partidos SET estado = 'en_curso', tiempo_actual = 'finalizado', carga_retroactiva = true,
+       goles_local = 0, goles_visitante = 0
+     WHERE id = $1 RETURNING *`,
+    [req.params.id]
+  );
+  await registrar(pool, { torneoId: partido.torneo_id, usuarioId: req.usuario.id, accion: 'Empezó a cargar un partido jugado sin conexión' });
+
+  res.json(rows[0]);
+}));
+
 // Registra un gol (o autogol) en vivo y actualiza el marcador solo.
 router.post('/:id/gol', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePartido(req.params.id)), soloArbitro, asyncHandler(async (req, res) => {
   const { jugador_id, en_propia_puerta } = req.body;
@@ -419,7 +443,7 @@ router.post('/:id/gol', requireAuth, requireAccesoTorneo((req) => obtenerTorneoI
   const partido = partidoRows[0];
   if (!partido) return res.status(404).json({ error: 'Partido no encontrado' });
   if (partido.estado !== 'en_curso') return res.status(400).json({ error: 'El partido tiene que estar en curso para anotar goles' });
-  if (!['primer_tiempo', 'segundo_tiempo'].includes(partido.tiempo_actual) || !partido.cronometro_inicio) {
+  if (!partido.carga_retroactiva && (!['primer_tiempo', 'segundo_tiempo'].includes(partido.tiempo_actual) || !partido.cronometro_inicio)) {
     return res.status(400).json({ error: 'El cronómetro tiene que estar corriendo para anotar un gol' });
   }
 
@@ -434,7 +458,7 @@ router.post('/:id/gol', requireAuth, requireAccesoTorneo((req) => obtenerTorneoI
   if ((await jugadoresSuspendidosParaPartido(pool, partido.torneo_id, partido.id)).has(jugador_id)) {
     return res.status(400).json({ error: 'Este jugador está sancionado y no puede jugar este partido' });
   }
-  if (usaAlineacionFormal(partido.modalidad)) {
+  if (!partido.carga_retroactiva && usaAlineacionFormal(partido.modalidad)) {
     const { rows: alineacionRows } = await pool.query(
       'SELECT * FROM partido_alineacion WHERE partido_id = $1 AND jugador_id = $2',
       [req.params.id, jugador_id]

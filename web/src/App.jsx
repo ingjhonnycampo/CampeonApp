@@ -29,6 +29,7 @@ import AdminEstadisticasUso from './pages/admin/AdminEstadisticasUso';
 import ArbitroDashboard from './pages/arbitro/ArbitroDashboard';
 import PlanillaPartido from './pages/arbitro/PlanillaPartido';
 import ImprimirInformePartido from './pages/arbitro/ImprimirInformePartido';
+import ImprimirPlanillaManual from './pages/arbitro/ImprimirPlanillaManual';
 
 function Inicio() {
   const { usuario, cargando } = useAuth();
@@ -67,6 +68,7 @@ export default function App() {
             <Route path="/arbitro" element={<RutaProtegida roles={['admin', 'organizador', 'arbitro']}><ArbitroDashboard /></RutaProtegida>} />
             <Route path="/arbitro/planilla/:partidoId" element={<RutaProtegida roles={['admin', 'organizador', 'arbitro']}><PlanillaPartido /></RutaProtegida>} />
             <Route path="/arbitro/informe/:partidoId" element={<RutaProtegida roles={['admin', 'organizador', 'arbitro']}><ImprimirInformePartido /></RutaProtegida>} />
+            <Route path="/arbitro/planilla-manual/:partidoId" element={<RutaProtegida roles={['admin', 'organizador', 'arbitro']}><ImprimirPlanillaManual /></RutaProtegida>} />
             <Route path="/delegado" element={<RutaProtegida roles={['delegado']}><DashboardPlaceholder /></RutaProtegida>} />
             <Route path="/" element={<Inicio />} />
             </Routes>

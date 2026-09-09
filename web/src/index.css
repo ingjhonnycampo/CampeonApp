@@ -1240,6 +1240,132 @@ h1, h2, h3 {
   text-align: right;
 }
 
+/* Planilla manual de respaldo (en papel, sin conexión) */
+.planilla-manual-nota {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  margin-bottom: 18px;
+}
+
+.planilla-manual-datos {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 14px;
+}
+
+.planilla-manual-resultado {
+  border: 1px solid var(--ink);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+.planilla-manual-marcador {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.planilla-manual-equipo-nombre {
+  font-weight: 700;
+}
+
+.planilla-manual-casilla-grande {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+}
+
+.planilla-manual-guion {
+  font-weight: 700;
+}
+
+.planilla-manual-equipo {
+  margin-bottom: 22px;
+}
+
+.planilla-manual-equipo h2 {
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+
+.planilla-manual-tabla th {
+  white-space: nowrap;
+}
+
+.planilla-manual-casilla {
+  width: 24px;
+}
+
+.planilla-manual-casilla::after {
+  content: '';
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--ink-muted);
+  border-radius: 3px;
+}
+
+.planilla-manual-blanco {
+  min-width: 120px;
+}
+
+.planilla-manual-cambios, .planilla-manual-observaciones {
+  margin-bottom: 22px;
+}
+
+.planilla-manual-cambios h2, .planilla-manual-observaciones h2 {
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+
+.planilla-manual-linea {
+  border-bottom: 1px solid var(--line);
+  height: 26px;
+}
+
+.planilla-manual-firmas {
+  display: flex;
+  gap: 24px;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+.planilla-manual-firma-bloque {
+  flex: 1 1 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+
+.planilla-manual-firma-linea {
+  width: 100%;
+  border-bottom: 1px solid var(--ink);
+  height: 46px;
+}
+
 .imprimir-informe-cabecera {
   display: flex;
   align-items: center;

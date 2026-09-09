@@ -107,6 +107,14 @@ export default function PlanillaPartido() {
       )}
 
       {(partido.estado === 'programado' || partido.estado === 'reprogramado') && (
+        <p className="admin-empty">
+          <Link to={`/arbitro/planilla-manual/${partido.id}`} target="_blank">
+            🖨️ Imprimir planilla de respaldo en papel (por si falla el internet)
+          </Link>
+        </p>
+      )}
+
+      {(partido.estado === 'programado' || partido.estado === 'reprogramado') && (
         <PrePartido datos={datos} onListo={cargar} soloLectura={soloLectura} />
       )}
       {partido.estado === 'en_curso' && <PlanillaEnVivo datos={datos} onCambio={cargar} soloLectura={soloLectura} />}
@@ -154,10 +162,59 @@ function PrePartido({ datos, onListo, soloLectura }) {
       </section>
     );
   }
-  if (!usaAlineacionFormal(partido.modalidad)) {
-    return <IniciarMicrofutbol datos={datos} onListo={onListo} soloLectura={soloLectura} />;
+
+  // Si ya pasó la hora programada y el partido sigue sin jugarse en la app, puede
+  // ser que se haya jugado sin internet — se ofrece cargarlo con detalle en vez
+  // de forzar todo el paso previo (firma, alineación) que ya no tiene sentido.
+  const yaDebioJugarse = !!partido.fecha_hora && new Date(partido.fecha_hora).getTime() < Date.now();
+
+  return (
+    <>
+      {yaDebioJugarse && !soloLectura && <PanelCargaRetroactiva partido={partido} onListo={onListo} />}
+      {!usaAlineacionFormal(partido.modalidad)
+        ? <IniciarMicrofutbol datos={datos} onListo={onListo} soloLectura={soloLectura} />
+        : <ArmarAlineacion datos={datos} onListo={onListo} soloLectura={soloLectura} />}
+    </>
+  );
+}
+
+// Punto de entrada para cargar un partido que ya se jugó sin conexión (con la
+// planilla de respaldo en papel) — abre el partido directo en modo de carga,
+// sin pasar por firma/alineación/cronómetro.
+function PanelCargaRetroactiva({ partido, onListo }) {
+  const modal = useModal();
+  const [cargando, setCargando] = useState(false);
+
+  async function cargar() {
+    const confirmado = await modal.confirmar({
+      titulo: '¿Este partido ya se jugó sin conexión?',
+      mensaje: 'Vas a poder anotar los goles y las tarjetas de la planilla en papel, sin depender del cronómetro ni de minutos exactos — el resultado se arma solo con lo que anotes.',
+      textoAceptar: 'Sí, cargar el resultado'
+    });
+    if (!confirmado) return;
+    setCargando(true);
+    try {
+      await api(`/planilla/${partido.id}/cargar-retroactivo`, { method: 'POST' });
+      await onListo();
+    } catch (err) {
+      await modal.error(err.message, 'No se pudo empezar la carga');
+    } finally {
+      setCargando(false);
+    }
   }
-  return <ArmarAlineacion datos={datos} onListo={onListo} soloLectura={soloLectura} />;
+
+  return (
+    <section className="admin-card">
+      <h2>¿Este partido ya se jugó sin conexión?</h2>
+      <p className="admin-empty">
+        Si no hubo internet durante el partido y llevaste la planilla en papel, puedes cargar aquí los
+        goles y las tarjetas para que goleadores y sanciones queden completos.
+      </p>
+      <button type="button" className="subida-imagen-btn" onClick={cargar} disabled={cargando}>
+        {cargando ? 'Abriendo...' : 'Cargar resultado con detalle'}
+      </button>
+    </section>
+  );
 }
 
 // Un equipo de microfútbol en la pantalla previa al inicio: firma del delegado +
@@ -662,7 +719,7 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
   const modal = useModal();
   const { partido, alineacion, goles, tarjetas, cambios, hitos, convocadosLocal, convocadosVisitante, reglasCancha } = datos;
   const usaAlineacion = usaAlineacionFormal(partido.modalidad);
-  const puedeAnotarGol = cronometroCorriendo(partido) && !soloLectura;
+  const puedeAnotarGol = (partido.carga_retroactiva || cronometroCorriendo(partido)) && !soloLectura;
 
   const [enviando, setEnviando] = useState(false);
 
@@ -793,19 +850,28 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
         </h2>
       </section>
 
-      <Cronometro partido={partido} onCambio={onCambio} soloLectura={soloLectura} />
+      {partido.carga_retroactiva ? (
+        <section className="admin-card">
+          <p className="admin-empty" style={{ textAlign: 'center' }}>
+            📋 Estás cargando este partido después de jugado, sin conexión al momento — anota cada gol y
+            tarjeta; no hace falta el minuto exacto. Cuando termines, dale a "Finalizar partido".
+          </p>
+        </section>
+      ) : (
+        <Cronometro partido={partido} onCambio={onCambio} soloLectura={soloLectura} />
+      )}
 
       <div className="planilla-equipos-grid">
         <ColumnaEquipo
           titulo={partido.equipo_local_nombre} jugadores={convocadosLocal}
-          usaAlineacion={usaAlineacion} idsEnCancha={idsEnCancha}
+          usaAlineacion={usaAlineacion && !partido.carga_retroactiva} idsEnCancha={idsEnCancha}
           goles={goles} tarjetas={tarjetas} enviando={enviando} puedeAnotarGol={puedeAnotarGol}
           soloLectura={soloLectura} modalidad={partido.modalidad} reglasCancha={reglasCancha}
           onGol={registrarGol} onTarjeta={registrarTarjeta}
         />
         <ColumnaEquipo
           titulo={partido.equipo_visitante_nombre} jugadores={convocadosVisitante}
-          usaAlineacion={usaAlineacion} idsEnCancha={idsEnCancha}
+          usaAlineacion={usaAlineacion && !partido.carga_retroactiva} idsEnCancha={idsEnCancha}
           goles={goles} tarjetas={tarjetas} enviando={enviando} puedeAnotarGol={puedeAnotarGol}
           soloLectura={soloLectura} modalidad={partido.modalidad} reglasCancha={reglasCancha}
           onGol={registrarGol} onTarjeta={registrarTarjeta}

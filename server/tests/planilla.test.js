@@ -159,4 +159,55 @@ test('planilla en vivo', async (t) => {
     });
     assert.equal(r.status, 400);
   });
+
+  // Carga retroactiva: un partido que se jugó sin conexión, cargado después con
+  // el detalle de goles y tarjetas, sin cronómetro ni minutos exactos.
+  let retro;
+  await t.test('un partido nuevo se puede abrir en modo "carga retroactiva"', async () => {
+    retro = await armarPartidoListo();
+    await pool.query(`INSERT INTO torneo_arbitros (torneo_id, usuario_id) VALUES ($1, (SELECT id FROM usuarios WHERE email = $2))`, [retro.torneoId, arbitro.email]);
+
+    const r = await fetch(`${baseUrl}/planilla/${retro.partidoId}/cargar-retroactivo`, { method: 'POST', headers: conCookie(cookie) });
+    assert.equal(r.status, 200);
+    const partido = await r.json();
+    assert.equal(partido.estado, 'en_curso');
+    assert.equal(partido.carga_retroactiva, true);
+    assert.equal(partido.tiempo_actual, 'finalizado');
+  });
+
+  await t.test('se puede anotar un gol sin que el cronómetro esté corriendo', async () => {
+    const r = await fetch(`${baseUrl}/planilla/${retro.partidoId}/gol`, {
+      method: 'POST', headers: conCookie(cookie),
+      body: JSON.stringify({ jugador_id: retro.jugadorId, en_propia_puerta: false })
+    });
+    assert.equal(r.status, 201);
+    const gol = await r.json();
+    assert.equal(gol.minuto, null, 'la carga retroactiva no exige minuto exacto');
+  });
+
+  await t.test('se puede anotar una tarjeta y finalizar sin pasar por el cronómetro', async () => {
+    const rTarjeta = await fetch(`${baseUrl}/planilla/${retro.partidoId}/tarjeta`, {
+      method: 'POST', headers: conCookie(cookie),
+      body: JSON.stringify({ jugador_id: retro.jugadorId, tipo: 'amarilla' })
+    });
+    assert.equal(rTarjeta.status, 201);
+
+    const rFinalizar = await fetch(`${baseUrl}/planilla/${retro.partidoId}/finalizar`, {
+      method: 'POST', headers: conCookie(cookie), body: JSON.stringify({})
+    });
+    assert.equal(rFinalizar.status, 200);
+    const partido = await rFinalizar.json();
+    assert.equal(partido.estado, 'jugado');
+    assert.equal(partido.goles_local, 1, 'el marcador se armó solo con el gol cargado');
+  });
+
+  await t.test('el gol cargado queda asociado al jugador correcto para el goleador', async () => {
+    const r = await fetch(`${baseUrl}/publico/partidos/${retro.partidoId}`);
+    assert.equal(r.status, 200);
+    const data = await r.json();
+    assert.equal(data.goles.length, 1);
+    assert.equal(data.goles[0].jugador_id, retro.jugadorId);
+    assert.equal(data.tarjetas.length, 1);
+    assert.equal(data.tarjetas[0].jugador_id, retro.jugadorId);
+  });
 });

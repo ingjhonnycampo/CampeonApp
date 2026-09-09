@@ -207,6 +207,10 @@ CREATE TABLE IF NOT EXISTS partidos (
   tiempo_actual TEXT CHECK (tiempo_actual IN ('primer_tiempo', 'descanso', 'segundo_tiempo', 'finalizado')),
   cronometro_inicio TIMESTAMPTZ,
   cronometro_acumulado_seg INTEGER NOT NULL DEFAULT 0,
+  -- Un partido que se jugó sin conexión: se carga después con el detalle de
+  -- goles y tarjetas (desde la planilla en papel de respaldo), sin depender del
+  -- cronómetro en vivo ni de minutos exactos. Ver POST /planilla/:id/cargar-retroactivo.
+  carga_retroactiva BOOLEAN NOT NULL DEFAULT false,
   -- Firma del arbitro/anotador que cierra la planilla, para el informe imprimible.
   firma_arbitro TEXT, -- imagen PNG en base64 (data URL) dibujada en la pantalla de firma
   firmado_por INTEGER REFERENCES usuarios(id), -- cuenta con la que se firmo
