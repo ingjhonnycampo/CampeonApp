@@ -580,4 +580,38 @@ router.post('/:id/firma', requireAuth, requireAccesoTorneo((req) => obtenerTorne
   res.json(rows[0]);
 }));
 
+// Firma de cada delegado de equipo certificando la planilla — mismo dispositivo
+// del árbitro (los delegados no inician sesión aparte para esto), una sola vez
+// por lado y solo si el partido ya está jugado.
+router.post('/:id/firma-delegado', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePartido(req.params.id)), soloArbitro, asyncHandler(async (req, res) => {
+  const { lado, firma, firmante_nombre } = req.body;
+  if (!['local', 'visitante'].includes(lado)) {
+    return res.status(400).json({ error: 'lado debe ser "local" o "visitante"' });
+  }
+  if (!firma || !firma.startsWith('data:image/png;base64,')) {
+    return res.status(400).json({ error: 'La firma debe ser una imagen PNG' });
+  }
+  if (!firmante_nombre || !firmante_nombre.trim()) {
+    return res.status(400).json({ error: 'Escribe el nombre de quien firma' });
+  }
+
+  const { rows: partidoRows } = await pool.query('SELECT * FROM partidos WHERE id = $1', [req.params.id]);
+  const partido = partidoRows[0];
+  if (!partido) return res.status(404).json({ error: 'Partido no encontrado' });
+  if (partido.estado !== 'jugado') return res.status(400).json({ error: 'El partido tiene que estar finalizado para firmarlo' });
+
+  const columnaFirma = lado === 'local' ? 'firma_delegado_local' : 'firma_delegado_visitante';
+  const columnaNombre = lado === 'local' ? 'firmante_delegado_local' : 'firmante_delegado_visitante';
+  const columnaFecha = lado === 'local' ? 'firmado_delegado_local_en' : 'firmado_delegado_visitante_en';
+  if (partido[columnaFirma]) return res.status(400).json({ error: 'Este delegado ya firmó la planilla' });
+
+  const { rows } = await pool.query(
+    `UPDATE partidos SET ${columnaFirma} = $1, ${columnaNombre} = $2, ${columnaFecha} = now() WHERE id = $3 RETURNING *`,
+    [firma, firmante_nombre.trim(), req.params.id]
+  );
+  await registrar(pool, { torneoId: partido.torneo_id, usuarioId: req.usuario.id, accion: `Firmó la planilla el delegado ${lado === 'local' ? 'local' : 'visitante'}` });
+
+  res.json(rows[0]);
+}));
+
 module.exports = router;

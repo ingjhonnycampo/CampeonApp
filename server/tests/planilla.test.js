@@ -75,4 +75,37 @@ test('planilla en vivo', async (t) => {
     assert.equal(data.goles.length, 1);
     assert.equal(data.goles[0].jugador_id, jugadorId);
   });
+
+  await t.test('el delegado local puede firmar la planilla una vez el partido ya está jugado', async () => {
+    await pool.query(`UPDATE partidos SET estado = 'jugado' WHERE id = $1`, [partidoId]);
+
+    const r = await fetch(`${baseUrl}/planilla/${partidoId}/firma-delegado`, {
+      method: 'POST', headers: conCookie(cookie),
+      body: JSON.stringify({ lado: 'local', firma: 'data:image/png;base64,abc', firmante_nombre: 'Delegado A' })
+    });
+    assert.equal(r.status, 200);
+    const partido = await r.json();
+    assert.equal(partido.firma_delegado_local, 'data:image/png;base64,abc');
+    assert.equal(partido.firmante_delegado_local, 'Delegado A');
+    assert.equal(partido.firma_delegado_visitante, null, 'el delegado visitante no ha firmado todavía');
+  });
+
+  await t.test('el mismo delegado no puede volver a firmar', async () => {
+    const r = await fetch(`${baseUrl}/planilla/${partidoId}/firma-delegado`, {
+      method: 'POST', headers: conCookie(cookie),
+      body: JSON.stringify({ lado: 'local', firma: 'data:image/png;base64,def', firmante_nombre: 'Otro' })
+    });
+    assert.equal(r.status, 400);
+  });
+
+  await t.test('el delegado visitante firma por separado, sin pisar la firma del local', async () => {
+    const r = await fetch(`${baseUrl}/planilla/${partidoId}/firma-delegado`, {
+      method: 'POST', headers: conCookie(cookie),
+      body: JSON.stringify({ lado: 'visitante', firma: 'data:image/png;base64,ghi', firmante_nombre: 'Delegado B' })
+    });
+    assert.equal(r.status, 200);
+    const partido = await r.json();
+    assert.equal(partido.firma_delegado_visitante, 'data:image/png;base64,ghi');
+    assert.equal(partido.firma_delegado_local, 'data:image/png;base64,abc', 'la firma del local sigue intacta');
+  });
 });

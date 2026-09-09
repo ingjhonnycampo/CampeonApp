@@ -705,6 +705,55 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
   );
 }
 
+// Firma de un delegado de equipo (local o visitante) — mismo mecanismo que la
+// firma del árbitro, pero sin observaciones (esas son solo del árbitro/anotador).
+function PanelFirmaDelegado({ titulo, lado, partido, onCambio, soloLectura }) {
+  const modal = useModal();
+  const [firmando, setFirmando] = useState(false);
+  const [nombre, setNombre] = useState('');
+
+  const firmaUrl = lado === 'local' ? partido.firma_delegado_local : partido.firma_delegado_visitante;
+  const firmante = lado === 'local' ? partido.firmante_delegado_local : partido.firmante_delegado_visitante;
+  const firmadoEn = lado === 'local' ? partido.firmado_delegado_local_en : partido.firmado_delegado_visitante_en;
+
+  async function guardarFirma(dataUrl) {
+    if (!nombre.trim()) {
+      await modal.error('Escribe el nombre de quien firma.', 'Falta el nombre');
+      return;
+    }
+    setFirmando(true);
+    try {
+      await api(`/planilla/${partido.id}/firma-delegado`, { method: 'POST', body: JSON.stringify({ lado, firma: dataUrl, firmante_nombre: nombre }) });
+      await onCambio();
+    } catch (err) {
+      await modal.error(err.message, 'No se pudo guardar la firma');
+    } finally {
+      setFirmando(false);
+    }
+  }
+
+  return (
+    <>
+      <h3>{titulo}</h3>
+      {firmaUrl ? (
+        <>
+          <img src={firmaUrl} alt="Firma" className="planilla-firma-imagen" />
+          <p className="admin-empty">Firmado por {firmante || '—'} el {new Date(firmadoEn).toLocaleString('es-CO')}</p>
+        </>
+      ) : soloLectura ? (
+        <p className="admin-empty">Todavía no ha firmado.</p>
+      ) : (
+        <>
+          <label className="planilla-observaciones">Nombre de quien firma
+            <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre completo" />
+          </label>
+          <FirmaPad onGuardar={guardarFirma} guardando={firmando} />
+        </>
+      )}
+    </>
+  );
+}
+
 function ResumenPartido({ datos, onCambio, soloLectura }) {
   const modal = useModal();
   const { partido, goles, tarjetas, cambios } = datos;
@@ -771,6 +820,15 @@ function ResumenPartido({ datos, onCambio, soloLectura }) {
         ))}
         {cambios.length === 0 && <p className="admin-empty">No hubo cambios.</p>}
       </div>
+
+      <PanelFirmaDelegado
+        titulo={`Firma del delegado — ${partido.equipo_local_nombre}`}
+        lado="local" partido={partido} onCambio={onCambio} soloLectura={soloLectura}
+      />
+      <PanelFirmaDelegado
+        titulo={`Firma del delegado — ${partido.equipo_visitante_nombre}`}
+        lado="visitante" partido={partido} onCambio={onCambio} soloLectura={soloLectura}
+      />
 
       <h3>Firma del árbitro/anotador</h3>
       {partido.firma_arbitro ? (

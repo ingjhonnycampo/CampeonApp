@@ -68,16 +68,43 @@ export default function ImprimirInformePartido() {
 
       <div className="imprimir-informe-firma">
         <h3>Certifica</h3>
-        {partido.firma_arbitro ? (
-          <>
-            <img src={partido.firma_arbitro} alt="Firma" className="planilla-firma-imagen" />
-            <p>{partido.firmante_nombre || partido.firmado_por_nombre || '—'} — {partido.firmado_en ? new Date(partido.firmado_en).toLocaleString('es-CO') : ''}</p>
-            {partido.observaciones_arbitro && (
-              <p className="imprimir-informe-observaciones"><strong>Observaciones:</strong> {partido.observaciones_arbitro}</p>
+        <div className="imprimir-informe-firmas">
+          <div className="imprimir-informe-firma-bloque">
+            <span className="imprimir-informe-firma-etiqueta">Delegado — {partido.equipo_local_nombre}</span>
+            {partido.firma_delegado_local ? (
+              <>
+                <img src={partido.firma_delegado_local} alt="Firma" className="planilla-firma-imagen" />
+                <p>{partido.firmante_delegado_local || '—'} — {partido.firmado_delegado_local_en ? new Date(partido.firmado_delegado_local_en).toLocaleString('es-CO') : ''}</p>
+              </>
+            ) : (
+              <p className="admin-empty">No firmó.</p>
             )}
-          </>
-        ) : (
-          <p className="admin-empty">Esta planilla todavía no ha sido firmada.</p>
+          </div>
+          <div className="imprimir-informe-firma-bloque">
+            <span className="imprimir-informe-firma-etiqueta">Delegado — {partido.equipo_visitante_nombre}</span>
+            {partido.firma_delegado_visitante ? (
+              <>
+                <img src={partido.firma_delegado_visitante} alt="Firma" className="planilla-firma-imagen" />
+                <p>{partido.firmante_delegado_visitante || '—'} — {partido.firmado_delegado_visitante_en ? new Date(partido.firmado_delegado_visitante_en).toLocaleString('es-CO') : ''}</p>
+              </>
+            ) : (
+              <p className="admin-empty">No firmó.</p>
+            )}
+          </div>
+          <div className="imprimir-informe-firma-bloque">
+            <span className="imprimir-informe-firma-etiqueta">Árbitro/anotador</span>
+            {partido.firma_arbitro ? (
+              <>
+                <img src={partido.firma_arbitro} alt="Firma" className="planilla-firma-imagen" />
+                <p>{partido.firmante_nombre || partido.firmado_por_nombre || '—'} — {partido.firmado_en ? new Date(partido.firmado_en).toLocaleString('es-CO') : ''}</p>
+              </>
+            ) : (
+              <p className="admin-empty">Esta planilla todavía no ha sido firmada.</p>
+            )}
+          </div>
+        </div>
+        {partido.observaciones_arbitro && (
+          <p className="imprimir-informe-observaciones"><strong>Observaciones:</strong> {partido.observaciones_arbitro}</p>
         )}
       </div>
 

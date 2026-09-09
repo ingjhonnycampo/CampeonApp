@@ -213,6 +213,16 @@ CREATE TABLE IF NOT EXISTS partidos (
   firmante_nombre TEXT, -- nombre de la persona que realmente firmo (puede no ser el nombre de la cuenta)
   firmado_en TIMESTAMPTZ,
   observaciones_arbitro TEXT,
+  -- Firma de cada delegado de equipo certificando la planilla, capturada en el
+  -- mismo dispositivo del árbitro (los delegados no tienen una sesión propia
+  -- para esto). Igual que la firma del árbitro: una sola vez, solo si el
+  -- partido ya está jugado.
+  firma_delegado_local TEXT,
+  firmante_delegado_local TEXT,
+  firmado_delegado_local_en TIMESTAMPTZ,
+  firma_delegado_visitante TEXT,
+  firmante_delegado_visitante TEXT,
+  firmado_delegado_visitante_en TIMESTAMPTZ,
   jugado_desde TIMESTAMPTZ, -- hora real en que se le dio "Iniciar partido" (no la programada)
   jugado_hasta TIMESTAMPTZ, -- hora real en que se finalizo
   -- Segundos realmente jugados en el primer tiempo (puede ser menos o mas que

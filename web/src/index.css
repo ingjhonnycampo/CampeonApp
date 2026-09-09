@@ -1373,6 +1373,35 @@ h1, h2, h3 {
   text-align: center;
 }
 
+.imprimir-informe-firmas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 12px;
+}
+
+.imprimir-informe-firma-bloque {
+  flex: 1 1 220px;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.imprimir-informe-firma-bloque .planilla-firma-imagen {
+  max-width: 100%;
+}
+
+.imprimir-informe-firma-etiqueta {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 @page {
   size: letter portrait;
   margin: 1.5cm;
