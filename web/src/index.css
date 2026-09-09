@@ -1091,6 +1091,28 @@ h1, h2, h3 {
   cursor: default;
 }
 
+.subida-documento-fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.subida-documento-actual {
+  color: var(--accent-strong);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.organiza-info-reglamento {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent-strong);
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .admin-enlace-acciones {
   display: flex;
   gap: 8px;

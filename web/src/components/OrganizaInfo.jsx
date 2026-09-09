@@ -2,7 +2,7 @@ import IconoWhatsapp from './IconoWhatsapp';
 import { enlaceWhatsapp } from '../lib/telefono';
 
 export default function OrganizaInfo({ torneo }) {
-  if (!torneo?.organizador && !torneo?.telefono_organizador && !torneo?.grupo_whatsapp) return null;
+  if (!torneo?.organizador && !torneo?.telefono_organizador && !torneo?.grupo_whatsapp && !torneo?.reglamento_url) return null;
   const enlaceTelefono = enlaceWhatsapp(torneo?.telefono_organizador);
 
   return (
@@ -25,6 +25,11 @@ export default function OrganizaInfo({ torneo }) {
       {torneo.grupo_whatsapp && (
         <a href={torneo.grupo_whatsapp} target="_blank" rel="noreferrer" className="organiza-info-whatsapp organiza-info-grupo">
           <IconoWhatsapp className="organiza-info-whatsapp-icono" /> Únete al grupo de delegados
+        </a>
+      )}
+      {torneo.reglamento_url && (
+        <a href={torneo.reglamento_url} target="_blank" rel="noreferrer" className="organiza-info-reglamento">
+          📄 Descargar el reglamento
         </a>
       )}
     </div>

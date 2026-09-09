@@ -192,6 +192,7 @@ router.get('/torneos/:slug', asyncHandler(async (req, res) => {
     organizador: torneo.organizador,
     telefono_organizador: torneo.telefono_organizador,
     grupo_whatsapp: torneo.grupo_whatsapp,
+    reglamento_url: torneo.reglamento_url,
     estado_inscripciones: estadoInscripciones(torneo),
     estado_campeonato: estadoCampeonato(torneo),
     reglas
@@ -335,7 +336,7 @@ router.get('/inscripcion/:codigo', codigoAccesoLimiter, asyncHandler(async (req,
       nombre: torneo.nombre, slug: torneo.slug, logo_url: torneo.logo_url,
       max_jugadores: torneo.max_jugadores, min_jugadores: torneo.min_jugadores,
       organizador: torneo.organizador, telefono_organizador: torneo.telefono_organizador,
-      grupo_whatsapp: torneo.grupo_whatsapp,
+      grupo_whatsapp: torneo.grupo_whatsapp, reglamento_url: torneo.reglamento_url,
       fecha_inicio: torneo.fecha_inicio, reglas
     },
     editable: equipo.estado !== 'aprobado' && estadoInscripciones(torneo) === 'abierta'

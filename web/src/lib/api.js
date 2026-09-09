@@ -43,14 +43,15 @@ export async function apiPublico(path, opts = {}) {
   return data;
 }
 
-async function subirA(endpoint, archivo, opts = {}) {
+async function subirA(endpoint, archivo, campo, opts = {}) {
   const formData = new FormData();
-  formData.append('imagen', archivo);
+  formData.append(campo, archivo);
   const res = await fetch(BASE + endpoint, { method: 'POST', body: formData, ...opts });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'No se pudo subir la imagen');
+  if (!res.ok) throw new Error(data.error || 'No se pudo subir el archivo');
   return data.url;
 }
 
-export const subirImagen = (archivo) => subirA('/api/upload', archivo, { credentials: 'include' });
-export const subirImagenPublica = (archivo) => subirA('/api/publico/upload', archivo);
+export const subirImagen = (archivo) => subirA('/api/upload', archivo, 'imagen', { credentials: 'include' });
+export const subirImagenPublica = (archivo) => subirA('/api/publico/upload', archivo, 'imagen');
+export const subirDocumento = (archivo) => subirA('/api/upload/documento', archivo, 'documento', { credentials: 'include' });

@@ -6,6 +6,7 @@ import { api } from '../../lib/api';
 import { calcularEdad, jugadorRequiereValidacion } from '../../lib/edad';
 import { calcularEstadoCampeonato } from '../../lib/estadoCampeonato';
 import SubidaImagen from '../../components/SubidaImagen';
+import SubidaDocumento from '../../components/SubidaDocumento';
 import PieFirma from '../../components/PieFirma';
 import PanelHeader from '../../components/PanelHeader';
 import EstadoCampeonato from '../../components/EstadoCampeonato';
@@ -212,7 +213,7 @@ const SUGERIDOS_POR_MODALIDAD = {
 const FORM_VACIO = {
   nombre: '', modalidad: 'futbol', duracion_tiempo_1: 45, duracion_tiempo_2: 45, logo_url: '',
   fecha_inicio: '', fecha_fin: '', inscripciones_desde: '', inscripciones_hasta: '', organizador: '', telefono_organizador: '',
-  grupo_whatsapp: '',
+  grupo_whatsapp: '', reglamento_url: '',
   ...SUGERIDOS_POR_MODALIDAD.futbol
 };
 
@@ -272,7 +273,8 @@ function SeccionCampeonatos({ torneos, activo, onSelect, onGuardar, puedeCrear }
       fecha_fin: t.fecha_fin ? t.fecha_fin.slice(0, 10) : '',
       inscripciones_desde: paraInput(t.inscripciones_desde), inscripciones_hasta: paraInput(t.inscripciones_hasta),
       max_jugadores: t.max_jugadores || 10, min_jugadores: t.min_jugadores || 7,
-      organizador: t.organizador || '', telefono_organizador: t.telefono_organizador || '', grupo_whatsapp: t.grupo_whatsapp || ''
+      organizador: t.organizador || '', telefono_organizador: t.telefono_organizador || '', grupo_whatsapp: t.grupo_whatsapp || '',
+      reglamento_url: t.reglamento_url || ''
     });
     const reglasExistentes = await api(`/torneos/${t.id}/reglas`);
     setReglas(reglasExistentes);
@@ -406,6 +408,11 @@ function SeccionCampeonatos({ torneos, activo, onSelect, onGuardar, puedeCrear }
             placeholder="https://chat.whatsapp.com/..."
           />
         </label>
+        <SubidaDocumento
+          etiqueta="Reglamento del campeonato (PDF)"
+          valor={form.reglamento_url}
+          onChange={(url) => setForm({ ...form, reglamento_url: url })}
+        />
 
         <div className="admin-reglas">
           <span className="subida-imagen-label">Condiciones de edad</span>
