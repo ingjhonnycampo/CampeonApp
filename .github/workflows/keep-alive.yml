@@ -1,0 +1,18 @@
+name: Mantener despierto el backend (Render)
+
+# El plan gratuito de Render "duerme" el servidor tras ~15 minutos sin
+# solicitudes, y la siguiente visita real tarda hasta 50 segundos en
+# despertarlo (a veces falla si la conexión del visitante es inestable
+# justo en ese momento). Este ping cada 10 minutos evita que llegue a
+# dormirse, sin necesidad de pagar un plan superior.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /api/salud
+        run: curl -fsS --max-time 55 https://campeonapp.onrender.com/api/salud
