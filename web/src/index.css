@@ -1332,6 +1332,30 @@ h1, h2, h3 {
   margin-bottom: 6px;
 }
 
+.planilla-manual-datos-equipo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.planilla-manual-campo {
+  flex: 1 1 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+}
+
+.planilla-manual-campo--ancho {
+  flex: 1 1 100%;
+}
+
+.planilla-manual-campo .planilla-manual-linea {
+  height: 28px;
+}
+
 .planilla-manual-tabla th {
   white-space: nowrap;
 }

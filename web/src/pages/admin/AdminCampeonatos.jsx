@@ -340,6 +340,7 @@ function SeccionCampeonatos({ torneos, activo, onSelect, onGuardar, puedeCrear }
               <button type="button" className="subida-imagen-btn" onClick={editarSeleccionado}>Editar este campeonato</button>
             )}
             <Link to={`/inscripcion/${torneoActivo.slug}`} className="subida-imagen-btn">Abrir inscripción pública</Link>
+            <Link to={`/admin/imprimir/inscripcion/${torneoActivo.id}`} target="_blank" className="subida-imagen-btn">Imprimir planilla de inscripción en blanco</Link>
             <Link to={`/admin/imprimir/torneo/${torneoActivo.id}`} target="_blank" className="subida-imagen-btn">Imprimir listado de equipos</Link>
           </div>
         </div>
