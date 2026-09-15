@@ -586,8 +586,11 @@ function EquipoInscrito({
     }
   }
 
+  // Si el torneo no tiene ninguna condición de edad configurada (o ningún
+  // jugador de este equipo la necesita), no hay nada que validar — el equipo
+  // queda "ok para participar" apenas se aprueba, sin exigir un paso de más.
   const jugadoresAValidar = jugadores.filter((j) => jugadorRequiereValidacion(j, reglasPlanilla, fechaReferencia));
-  const edadesValidadas = jugadoresAValidar.length > 0 && jugadoresAValidar.every((j) => j.estado_validacion === 'validado');
+  const edadesValidadas = jugadoresAValidar.every((j) => j.estado_validacion === 'validado');
   const habilitado = equipo.estado === 'aprobado' && edadesValidadas;
 
   let etiquetaEstado = equipo.estado;
