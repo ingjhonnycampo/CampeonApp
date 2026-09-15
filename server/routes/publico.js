@@ -297,7 +297,7 @@ router.post('/torneos/:slug/inscripcion', inscripcionLimiter, asyncHandler(async
       const { rows: jRows } = await cliente.query(
         `INSERT INTO jugadores (equipo_id, nombre, cedula, fecha_nacimiento, numero_camiseta)
          VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-        [equipoCreado.id, j.nombre, j.cedula, j.fecha_nacimiento, j.numero_camiseta || null]
+        [equipoCreado.id, j.nombre.toUpperCase(), j.cedula, j.fecha_nacimiento, j.numero_camiseta || null]
       );
       jugadoresCreados.push(jRows[0]);
     }
@@ -385,7 +385,7 @@ router.patch('/inscripcion/:codigo', codigoAccesoLimiter, asyncHandler(async (re
       const { rows: jRows } = await cliente.query(
         `INSERT INTO jugadores (equipo_id, nombre, cedula, fecha_nacimiento, numero_camiseta)
          VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-        [equipoActual.id, j.nombre, j.cedula, j.fecha_nacimiento, j.numero_camiseta || null]
+        [equipoActual.id, j.nombre.toUpperCase(), j.cedula, j.fecha_nacimiento, j.numero_camiseta || null]
       );
       jugadoresCreados.push(jRows[0]);
     }

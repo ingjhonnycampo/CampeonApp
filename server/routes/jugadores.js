@@ -37,7 +37,7 @@ router.post('/', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDeEqui
   const { rows } = await pool.query(
     `INSERT INTO jugadores (equipo_id, nombre, cedula, fecha_nacimiento, numero_camiseta, foto_url)
      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-    [equipo_id, nombre, cedula || null, fecha_nacimiento || null, numero_camiseta || null, foto_url || null]
+    [equipo_id, nombre.toUpperCase(), cedula || null, fecha_nacimiento || null, numero_camiseta || null, foto_url || null]
   );
   res.status(201).json(rows[0]);
 }));
@@ -57,7 +57,7 @@ router.patch('/:id', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDe
        nombre = $1, cedula = $2, fecha_nacimiento = $3, numero_camiseta = $4, estado_validacion = $5
      WHERE id = $6 RETURNING *`,
     [
-      nombre ?? actual.nombre,
+      nombre !== undefined ? nombre.toUpperCase() : actual.nombre,
       cedula !== undefined ? cedula : actual.cedula,
       fecha_nacimiento !== undefined ? fecha_nacimiento : actual.fecha_nacimiento,
       numero_camiseta !== undefined ? numero_camiseta : actual.numero_camiseta,
