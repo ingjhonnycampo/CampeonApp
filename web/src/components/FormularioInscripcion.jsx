@@ -113,7 +113,7 @@ export default function FormularioInscripcion({
           <div key={i} className="publico-jugador">
             <div className="admin-form-row">
               <label>Nombre
-                <input value={j.nombre} onChange={(e) => actualizarJugador(i, 'nombre', e.target.value)} required />
+                <input value={j.nombre} onChange={(e) => actualizarJugador(i, 'nombre', e.target.value.toUpperCase())} required />
               </label>
               <label># de Camiseta
                 <input type="number" value={j.numero_camiseta ?? ''} onChange={(e) => actualizarJugador(i, 'numero_camiseta', e.target.value)} />

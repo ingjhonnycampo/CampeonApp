@@ -545,7 +545,7 @@ function FormularioEdicionJugador({ jugador, onGuardar, onCancelar }) {
     <div className="admin-jugador-edicion">
       <div className="admin-form-row">
         <label>Nombre
-          <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
+          <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value.toUpperCase() })} />
         </label>
         <label>Número
           <input type="number" value={form.numero_camiseta} onChange={(e) => setForm({ ...form, numero_camiseta: e.target.value })} />
@@ -682,7 +682,7 @@ function EquipoInscrito({
             <span className="subida-imagen-label">Agregar jugador (refuerzo)</span>
             <div className="admin-form-row">
               <label>Nombre
-                <input value={nuevoJugador.nombre} onChange={(e) => setNuevoJugador({ ...nuevoJugador, nombre: e.target.value })} required />
+                <input value={nuevoJugador.nombre} onChange={(e) => setNuevoJugador({ ...nuevoJugador, nombre: e.target.value.toUpperCase() })} required />
               </label>
               <label>Número
                 <input type="number" value={nuevoJugador.numero_camiseta} onChange={(e) => setNuevoJugador({ ...nuevoJugador, numero_camiseta: e.target.value })} />
