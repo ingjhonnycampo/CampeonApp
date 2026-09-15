@@ -12,6 +12,7 @@ export default function SeccionFixture({ torneo, onCambio }) {
   const [partidosLiga, setPartidosLiga] = useState([]);
   const [posicionesLiga, setPosicionesLiga] = useState([]);
   const [generandoLiga, setGenerandoLiga] = useState(false);
+  const [regenerandoLiga, setRegenerandoLiga] = useState(false);
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
@@ -53,6 +54,28 @@ export default function SeccionFixture({ torneo, onCambio }) {
       await modal.error(err.message, 'No se pudo generar el fixture');
     } finally {
       setGenerandoLiga(false);
+    }
+  }
+
+  async function ampliarFixtureLiga() {
+    const confirmado = await modal.confirmar({
+      titulo: '¿Ampliar el fixture con los equipos nuevos?',
+      mensaje: 'Se agregan los cruces que faltan para que todos los equipos aprobados jueguen entre sí, sin tocar los partidos que ya se jugaron. Si ya se jugaron 2 o más fechas, el fixture se vuelve a sortear completo y cada resultado ya jugado se reubica en el cruce que le toque, sin perderse.',
+      textoAceptar: 'Ampliar fixture'
+    });
+    if (!confirmado) return;
+    setRegenerandoLiga(true);
+    try {
+      const data = await api(`/torneos/${torneo.id}/regenerar-fixture-liga`, { method: 'POST' });
+      await cargar(torneo.id);
+      const detalle = data.modo === 'parche'
+        ? `Se agregaron ${data.agregados} partido(s) nuevo(s).`
+        : `Se reorganizó el fixture completo: ${data.reubicados} partido(s) ya jugado(s) cambiaron de fecha (conservando su resultado), ${data.agregados} partido(s) nuevo(s) programados.`;
+      await modal.exito(detalle, 'Fixture ampliado');
+    } catch (err) {
+      await modal.error(err.message, 'No se pudo ampliar el fixture');
+    } finally {
+      setRegenerandoLiga(false);
     }
   }
 
@@ -98,6 +121,10 @@ export default function SeccionFixture({ torneo, onCambio }) {
   const faseEliminatoria = fases.find((f) => f.tipo === 'eliminacion');
   const jornadasLiga = [...new Set(partidosLiga.map((p) => p.jornada))].sort((a, b) => a - b);
 
+  const equiposEnFixture = new Set(partidosLiga.flatMap((p) => [p.equipo_local_id, p.equipo_visitante_id]));
+  const hayEquiposNuevos = equiposAprobados.some((e) => !equiposEnFixture.has(e.id));
+  const nombrePorEquipoId = new Map(equiposAprobados.map((e) => [e.id, e.nombre]));
+
   return (
     <div className="admin-fixture-stack">
       <div className="admin-form-linea">
@@ -138,18 +165,38 @@ export default function SeccionFixture({ torneo, onCambio }) {
                 />
               </div>
 
+              {hayEquiposNuevos && (
+                <div className="admin-form-linea">
+                  <p className="admin-ayuda">Hay equipos aprobados que todavía no están en el fixture.</p>
+                  <button type="button" onClick={ampliarFixtureLiga} disabled={regenerandoLiga} className="subida-imagen-btn">
+                    {regenerandoLiga ? 'Ampliando...' : 'Ampliar fixture con los equipos nuevos'}
+                  </button>
+                </div>
+              )}
+
               <div className="admin-list admin-list--alta">
-                {jornadasLiga.map((j) => (
-                  <div key={j} className="admin-jornada">
-                    <div className="admin-jornada-titulo">
-                      <h3>Jornada {j}</h3>
-                      <Link to={`/admin/imprimir/jornada/${torneo.id}/${j}`} target="_blank" className="admin-link-imprimir">Imprimir</Link>
+                {jornadasLiga.map((j) => {
+                  const equiposEnJornada = new Set(
+                    partidosLiga.filter((p) => p.jornada === j).flatMap((p) => [p.equipo_local_id, p.equipo_visitante_id])
+                  );
+                  const descansan = equiposAprobados.filter((e) => !equiposEnJornada.has(e.id));
+                  return (
+                    <div key={j} className="admin-jornada">
+                      <div className="admin-jornada-titulo">
+                        <h3>Jornada {j}</h3>
+                        <Link to={`/admin/imprimir/jornada/${torneo.id}/${j}`} target="_blank" className="admin-link-imprimir">Imprimir</Link>
+                      </div>
+                      {descansan.length > 0 && (
+                        <p className="admin-empty">
+                          Descansa: {descansan.map((e) => nombrePorEquipoId.get(e.id) || e.nombre).join(', ')}
+                        </p>
+                      )}
+                      {partidosLiga.filter((p) => p.jornada === j).map((p) => (
+                        <PartidoFila key={p.id} partido={p} onGuardado={() => cargar(torneo.id)} />
+                      ))}
                     </div>
-                    {partidosLiga.filter((p) => p.jornada === j).map((p) => (
-                      <PartidoFila key={p.id} partido={p} onGuardado={() => cargar(torneo.id)} />
-                    ))}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}

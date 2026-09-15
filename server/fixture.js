@@ -371,9 +371,129 @@ function equiposEnVivo(partidos) {
   return ids;
 }
 
+// Clave sin orden para comparar un cruce (A vs B es lo mismo que B vs A a la
+// hora de decidir si un par de equipos ya se enfrentó o no).
+function clavePar(a, b) {
+  return [a, b].sort((x, y) => x - y).join('-');
+}
+
+// Cuenta cuántas jornadas de la fase de liga tienen al menos un partido
+// "protegido" (jugado, en curso, o con algún trabajo ya hecho — firma de
+// delegado, alineación cargada). Con esto se decide si alcanza con "parchar"
+// el fixture (una sola fecha protegida) o si toca reconstruirlo completo (2 o más).
+function contarFechasProtegidas(partidos) {
+  const jornadas = new Set();
+  for (const p of partidos) {
+    if (p.protegido) jornadas.add(p.jornada);
+  }
+  return jornadas.size;
+}
+
+// Modo "parche": para cuando como mucho una fecha ya tiene algo jugado. Calcula
+// todos los cruces que hacen falta para que el todos-contra-todos quede completo
+// con la lista actual de equipos (viejos + nuevos), y los reparte en fechas
+// aprovechando primero los huecos de las fechas que YA EXISTEN (donde algún
+// equipo nuevo todavía no tiene partido ese día) antes de abrir fechas nuevas.
+// Nunca toca ni duplica un partido que ya existe.
+function ampliarFixtureConParche(equiposActuales, partidosExistentes, idaYVuelta = false) {
+  const requeridos = generarRoundRobin(equiposActuales, idaYVuelta);
+
+  const vecesExistente = new Map();
+  partidosExistentes.forEach((p) => {
+    const k = clavePar(p.equipo_local_id, p.equipo_visitante_id);
+    vecesExistente.set(k, (vecesExistente.get(k) || 0) + 1);
+  });
+
+  const pendientes = [];
+  const usados = new Map();
+  for (const req of requeridos) {
+    const k = clavePar(req.equipo_local_id, req.equipo_visitante_id);
+    const yaUsados = usados.get(k) || 0;
+    usados.set(k, yaUsados + 1);
+    if (yaUsados < (vecesExistente.get(k) || 0)) continue; // ese cruce ya existe como partido
+    pendientes.push({ equipo_local_id: req.equipo_local_id, equipo_visitante_id: req.equipo_visitante_id });
+  }
+
+  const jornadasExistentes = [...new Set(partidosExistentes.map((p) => p.jornada))].sort((a, b) => a - b);
+  const ocupadosPorJornada = new Map();
+  partidosExistentes.forEach((p) => {
+    if (!ocupadosPorJornada.has(p.jornada)) ocupadosPorJornada.set(p.jornada, new Set());
+    ocupadosPorJornada.get(p.jornada).add(p.equipo_local_id);
+    ocupadosPorJornada.get(p.jornada).add(p.equipo_visitante_id);
+  });
+
+  let siguienteJornadaNueva = (jornadasExistentes.length ? Math.max(...jornadasExistentes) : 0) + 1;
+  const secuenciaJornadas = [...jornadasExistentes];
+  let indice = 0;
+  const inserciones = [];
+
+  while (pendientes.length > 0) {
+    if (indice >= secuenciaJornadas.length) secuenciaJornadas.push(siguienteJornadaNueva++);
+    const jornada = secuenciaJornadas[indice];
+    if (!ocupadosPorJornada.has(jornada)) ocupadosPorJornada.set(jornada, new Set());
+    const ocupados = ocupadosPorJornada.get(jornada);
+
+    for (let i = 0; i < pendientes.length; i++) {
+      const par = pendientes[i];
+      if (!ocupados.has(par.equipo_local_id) && !ocupados.has(par.equipo_visitante_id)) {
+        inserciones.push({ jornada, equipo_local_id: par.equipo_local_id, equipo_visitante_id: par.equipo_visitante_id });
+        ocupados.add(par.equipo_local_id);
+        ocupados.add(par.equipo_visitante_id);
+        pendientes.splice(i, 1);
+        i--;
+      }
+    }
+    indice++;
+  }
+
+  return inserciones;
+}
+
+// Modo "reconstrucción completa": para cuando ya hay 2 o más fechas con algo
+// jugado. Se sortea un todos-contra-todos nuevo desde cero con la lista actual
+// de equipos, y cada partido ya jugado/protegido se reubica (solo se le cambia
+// la jornada) en el cruce que le toque en el nuevo calendario — sin duplicarlo
+// ni pedir que se repita. Los partidos sin jugar se borran y se regeneran frescos.
+function regenerarFixtureCompleto(equiposActuales, partidosExistentes, idaYVuelta = false) {
+  const nuevoCalendario = generarRoundRobin(equiposActuales, idaYVuelta);
+  const disponibles = [...nuevoCalendario];
+
+  const protegidos = partidosExistentes.filter((p) => p.protegido);
+  const libres = partidosExistentes.filter((p) => !p.protegido);
+
+  const actualizaciones = [];
+  for (const p of protegidos) {
+    const k = clavePar(p.equipo_local_id, p.equipo_visitante_id);
+    const idx = disponibles.findIndex((s) => clavePar(s.equipo_local_id, s.equipo_visitante_id) === k);
+    if (idx === -1) continue; // el rival ya no está en el torneo (ej. se dio de baja): se deja tal cual
+    const [slot] = disponibles.splice(idx, 1);
+    if (slot.jornada !== p.jornada) actualizaciones.push({ id: p.id, jornada: slot.jornada });
+  }
+
+  return {
+    actualizaciones,
+    inserciones: disponibles.map((s) => ({ jornada: s.jornada, equipo_local_id: s.equipo_local_id, equipo_visitante_id: s.equipo_visitante_id })),
+    eliminacionesIds: libres.map((p) => p.id)
+  };
+}
+
+// Equipos activos que no tienen ningún partido (como local o visitante) en esa
+// jornada — para mostrar "Descansa: [Equipo]" en la vista de fixture.
+function equiposQueDescansan(equiposActuales, partidos, jornada) {
+  const jugaron = new Set();
+  partidos.forEach((p) => {
+    if (p.jornada === jornada) {
+      jugaron.add(p.equipo_local_id);
+      jugaron.add(p.equipo_visitante_id);
+    }
+  });
+  return equiposActuales.filter((id) => !jugaron.has(id));
+}
+
 module.exports = {
   generarRoundRobin, generarRoundRobinConDescansos, emparejarDescansos, calcularPosiciones,
   obtenerGanadorId, obtenerPerdedorId,
   esPotenciaDeDos, armarCrucesIniciales, intercalarClasificadosPorGrupo, obtenerMejoresTerceros,
-  nombreRonda, barajar, proyectarPartidosEnCurso, equiposEnVivo
+  nombreRonda, barajar, proyectarPartidosEnCurso, equiposEnVivo,
+  contarFechasProtegidas, ampliarFixtureConParche, regenerarFixtureCompleto, equiposQueDescansan
 };

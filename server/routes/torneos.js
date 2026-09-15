@@ -2,7 +2,7 @@ const express = require('express');
 const pool = require('../db');
 const asyncHandler = require('../asyncHandler');
 const { requireAuth, requireRole, requireAccesoTorneo } = require('../middleware/auth');
-const { esPotenciaDeDos, generarRoundRobin } = require('../fixture');
+const { esPotenciaDeDos, generarRoundRobin, contarFechasProtegidas, ampliarFixtureConParche, regenerarFixtureCompleto } = require('../fixture');
 const { crearEsqueletoCompleto } = require('../clasificacion');
 const { registrar } = require('../bitacora');
 const { estadoFinalizacion } = require('../estadoTorneo');
@@ -387,6 +387,111 @@ router.post('/:id/generar-fixture', requireAuth, requireAccesoTorneo((req) => re
       ? 'Todavía no hay al menos 2 equipos aprobados: cuando los apruebes, vuelve aquí y genera el fixture con el botón de la sección Fixture.'
       : null
   });
+}));
+
+// Amplía o reconstruye el fixture de la fase de Liga para incluir equipos que se
+// inscribieron después de generado el fixture original, sin perder los partidos
+// ya jugados (ni sus goles/tarjetas/cambios) ni la firma/alineación ya cargada
+// de uno que esté a punto de jugarse.
+//
+// - Si como mucho una fecha tiene algo protegido: modo "parche" — se agregan los
+//   cruces que faltan (equipos nuevos entre sí y cruzados con los viejos)
+//   aprovechando huecos en las fechas ya existentes antes de abrir fechas nuevas.
+// - Si ya hay 2 o más fechas con algo protegido: modo "completo" — se sortea de
+//   nuevo todo el todos-contra-todos con la lista actual de equipos, y cada
+//   partido protegido se reubica (solo cambia su número de fecha) en el cruce
+//   que le toque en el nuevo calendario. Los partidos sin jugar se regeneran.
+router.post('/:id/regenerar-fixture-liga', requireAuth, requireAccesoTorneo((req) => req.params.id, ['organizador']), asyncHandler(async (req, res) => {
+  const torneoId = req.params.id;
+  const { rows: torneoRows } = await pool.query('SELECT * FROM torneos WHERE id = $1', [torneoId]);
+  const torneo = torneoRows[0];
+  if (!torneo) return res.status(404).json({ error: 'Torneo no encontrado' });
+  if (!torneo.fixture_generado || torneo.formato !== 'liga') {
+    return res.status(400).json({ error: 'Esta acción solo aplica a campeonatos en formato Liga con el fixture ya generado' });
+  }
+
+  const { rows: equipos } = await pool.query(
+    "SELECT id FROM equipos WHERE torneo_id = $1 AND estado = 'aprobado' AND estado_torneo = 'activo'",
+    [torneoId]
+  );
+  if (equipos.length < 2) {
+    return res.status(400).json({ error: 'Necesitas al menos 2 equipos aprobados y activos' });
+  }
+  const equiposIds = equipos.map((e) => e.id);
+
+  const { rows: partidosRaw } = await pool.query(
+    `SELECT p.id, p.jornada, p.equipo_local_id, p.equipo_visitante_id, p.estado,
+            p.firma_delegado_local, p.firma_delegado_visitante, p.confirmado_local, p.confirmado_visitante,
+            EXISTS(SELECT 1 FROM partido_alineacion pa WHERE pa.partido_id = p.id) AS tiene_alineacion
+     FROM partidos p
+     WHERE p.torneo_id = $1 AND p.fase_id IS NULL`,
+    [torneoId]
+  );
+
+  const partidos = partidosRaw.map((p) => ({
+    ...p,
+    protegido: p.estado === 'jugado' || p.estado === 'en_curso' ||
+      !!p.firma_delegado_local || !!p.firma_delegado_visitante ||
+      p.confirmado_local || p.confirmado_visitante || p.tiene_alineacion
+  }));
+
+  if (partidos.length === 0) {
+    return res.status(400).json({ error: 'Este campeonato todavía no tiene fixture generado' });
+  }
+
+  const equiposNuevos = equiposIds.filter((id) =>
+    !partidos.some((p) => p.equipo_local_id === id || p.equipo_visitante_id === id)
+  );
+  if (equiposNuevos.length === 0) {
+    return res.status(400).json({ error: 'No hay equipos nuevos: todos los equipos aprobados ya tienen partidos en el fixture actual' });
+  }
+
+  const modo = contarFechasProtegidas(partidos) <= 1 ? 'parche' : 'completo';
+  const cliente = await pool.connect();
+  let resultado;
+  try {
+    await cliente.query('BEGIN');
+
+    if (modo === 'parche') {
+      const inserciones = ampliarFixtureConParche(equiposIds, partidos, !!torneo.ida_vuelta);
+      for (const ins of inserciones) {
+        await cliente.query(
+          'INSERT INTO partidos (torneo_id, jornada, equipo_local_id, equipo_visitante_id) VALUES ($1, $2, $3, $4)',
+          [torneoId, ins.jornada, ins.equipo_local_id, ins.equipo_visitante_id]
+        );
+      }
+      resultado = { modo, agregados: inserciones.length };
+    } else {
+      const { actualizaciones, inserciones, eliminacionesIds } = regenerarFixtureCompleto(equiposIds, partidos, !!torneo.ida_vuelta);
+      for (const id of eliminacionesIds) {
+        await cliente.query('DELETE FROM partidos WHERE id = $1', [id]);
+      }
+      for (const act of actualizaciones) {
+        await cliente.query('UPDATE partidos SET jornada = $1 WHERE id = $2', [act.jornada, act.id]);
+      }
+      for (const ins of inserciones) {
+        await cliente.query(
+          'INSERT INTO partidos (torneo_id, jornada, equipo_local_id, equipo_visitante_id) VALUES ($1, $2, $3, $4)',
+          [torneoId, ins.jornada, ins.equipo_local_id, ins.equipo_visitante_id]
+        );
+      }
+      resultado = { modo, reubicados: actualizaciones.length, agregados: inserciones.length, eliminados: eliminacionesIds.length };
+    }
+
+    await cliente.query('COMMIT');
+  } catch (err) {
+    await cliente.query('ROLLBACK');
+    throw err;
+  } finally {
+    cliente.release();
+  }
+
+  await registrar(pool, {
+    torneoId, usuarioId: req.usuario.id,
+    accion: `Regeneró el fixture de liga (modo ${resultado.modo}) para incluir ${equiposNuevos.length} equipo(s) nuevo(s)`
+  });
+
+  res.json({ ok: true, ...resultado });
 }));
 
 // Borra toda la configuración del fixture (fases, grupos, partidos) para poder
