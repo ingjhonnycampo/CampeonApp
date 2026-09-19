@@ -9,10 +9,10 @@ import LineaTiempoPartido from '../../components/LineaTiempoPartido';
 import { maxTitulares as maxTitularesDe, usaAlineacionFormal, permiteTarjetaAzul } from '../../lib/modalidad';
 import { edadSiCumpleRegla } from '../../lib/edad';
 
-// Muestra la edad de un jugador en rojo cuando cumple alguna regla de edad "en
-// cancha" del torneo (ej. "mínimo 2 jugadores de 35+ años") — para que el
-// árbitro/anotador lo identifique de un vistazo, sin importar si la modalidad
-// exige alineación formal o los cambios son libres.
+// Muestra la edad de un jugador en rojo cuando cumple alguna regla de edad del
+// torneo (ej. "mínimo 2 jugadores de 35+ años") — para que el árbitro/anotador
+// lo identifique de un vistazo, sin importar si la modalidad exige alineación
+// formal o los cambios son libres.
 function EdadMayor({ jugador, reglasCancha }) {
   const edad = edadSiCumpleRegla(jugador, reglasCancha, new Date());
   if (edad === null) return null;

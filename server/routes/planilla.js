@@ -125,11 +125,11 @@ router.get('/:id', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePa
   const convocadosLocal = convocadosLocalRows.map((j) => ({ ...j, suspendido: suspendidos.has(j.id), expulsado: expulsados.has(j.id) }));
   const convocadosVisitante = convocadosVisitanteRows.map((j) => ({ ...j, suspendido: suspendidos.has(j.id), expulsado: expulsados.has(j.id) }));
 
-  // Reglas de edad "en cancha" (ej. mínimo de mayores jugando) — se usan en el
-  // frontend para resaltar en la planilla a los jugadores que cuentan para esa
-  // norma, aunque la modalidad no exija alineación formal ni límite de cambios.
+  // Reglas de edad del torneo (de planilla o en cancha, ej. "35+ años") — se usan en
+  // el frontend para mostrarle al planillero la edad de los jugadores mayores que
+  // cuentan para esas normas, aunque la modalidad no exija alineación formal.
   const { rows: reglasCancha } = await pool.query(
-    `SELECT edad_minima, cantidad_minima, descripcion FROM reglas_edad WHERE torneo_id = $1 AND ambito = 'cancha'`,
+    `SELECT edad_minima, cantidad_minima, descripcion FROM reglas_edad WHERE torneo_id = $1`,
     [partido.torneo_id]
   );
 
