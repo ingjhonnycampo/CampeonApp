@@ -4296,3 +4296,12 @@ h1, h2, h3 {
   font-size: 1rem;
   margin: 0 0 10px;
 }
+
+.imprimir-descansa {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  text-align: center;
+}

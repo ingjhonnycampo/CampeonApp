@@ -10,22 +10,30 @@ export default function ImprimirJornada() {
     const torneo = await api('/torneos/' + torneoId);
 
     let partidos;
+    let descansan = [];
     if (torneo.formato === 'grupos') {
       const fases = await api('/fases?torneo_id=' + torneoId);
       const faseGrupos = fases.find((f) => f.tipo === 'grupos');
       const todos = faseGrupos ? await api(`/fases/${faseGrupos.id}/partidos`) : [];
       partidos = todos.filter((p) => String(p.jornada) === String(jornada));
     } else {
-      const todos = await api('/partidos?torneo_id=' + torneoId);
+      const [todos, equipos] = await Promise.all([
+        api('/partidos?torneo_id=' + torneoId),
+        api('/equipos?torneo_id=' + torneoId)
+      ]);
       partidos = todos.filter((p) => String(p.jornada) === String(jornada));
+      // En la liga, quien no tiene partido en esta fecha (número impar de equipos, o
+      // equipos que entraron después) descansa.
+      const juegan = new Set(partidos.flatMap((p) => [p.equipo_local_id, p.equipo_visitante_id]));
+      descansan = equipos.filter((e) => e.estado === 'aprobado' && e.estado_torneo === 'activo' && !juegan.has(e.id));
     }
 
-    return { torneo, partidos };
+    return { torneo, partidos, descansan };
   }, [torneoId, jornada]);
 
   if (cargando || !datos) return <CargaJugador texto="Cargando la jornada..." />;
 
-  const { torneo, partidos } = datos;
+  const { torneo, partidos, descansan } = datos;
 
   function ganoLocal(p) {
     return p.estado === 'jugado' && p.goles_local > p.goles_visitante;
@@ -101,6 +109,12 @@ export default function ImprimirJornada() {
         ))}
 
         {partidos.length === 0 && <p className="admin-empty">No hay partidos programados en esta jornada.</p>}
+
+        {partidos.length > 0 && descansan.length > 0 && (
+          <p className="imprimir-descansa">
+            <strong>{todosJugados ? 'Descansó' : 'Descansa'}:</strong> {descansan.map((e) => e.nombre.trim()).join(', ')}
+          </p>
+        )}
       </div>
 
       <p className="imprimir-pie">
