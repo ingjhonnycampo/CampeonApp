@@ -9,6 +9,7 @@ import FilaPartidoPublico from '../../components/FilaPartidoPublico';
 import AvisosPito from '../../components/AvisosPito';
 import CuadroBracket from '../../components/CuadroBracket';
 import { registrarVisita } from '../../lib/visitas';
+import { restriccionSancion } from '../../lib/sanciones';
 
 function TablaGoleadores({ goleadores }) {
   if (goleadores.length === 0) return <p className="admin-empty">Todavía no hay goles registrados.</p>;
@@ -101,7 +102,7 @@ function SancionesActivas({ sanciones }) {
               <div key={s.tarjetaId} className="publico-sancion-fila">
                 <strong>{s.jugadorNombre}</strong>
                 <span>
-                  {ETIQUETA_SANCION[s.tipoSancion]} — no disponible para la Jornada {s.proximaFechaBloqueada}
+                  {ETIQUETA_SANCION[s.tipoSancion]} — {restriccionSancion(s)} (próxima fecha bloqueada: Jornada {s.proximaFechaBloqueada})
                   {formatoMulta(s.multa) && ` — multa: ${formatoMulta(s.multa)}`}
                 </span>
               </div>

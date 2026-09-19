@@ -4,6 +4,7 @@ import { api } from '../../lib/api';
 import { useModal } from '../../context/ModalContext';
 import CuadroBracket from '../../components/CuadroBracket';
 import { useConfiguracion } from '../../context/ConfiguracionContext';
+import { restriccionSancion } from '../../lib/sanciones';
 
 // Estos componentes muestran una fase de grupos o de eliminatoria ya generada por
 // el asistente único de "Generar fixture" (ver ConfiguradorFixture). Ya no se crean
@@ -932,7 +933,7 @@ export function SeccionSanciones({ torneoId }) {
                 <span>
                   <strong>{s.jugadorNombre}</strong>
                   <small>
-                    {ETIQUETA_SANCION[s.tipoSancion]} — no disponible para la Jornada {s.proximaFechaBloqueada}
+                    {ETIQUETA_SANCION[s.tipoSancion]} — {restriccionSancion(s)} (próxima fecha bloqueada: Jornada {s.proximaFechaBloqueada})
                     {formatoMulta(s.multa) && ` — multa: ${formatoMulta(s.multa)}`}
                   </small>
                 </span>
