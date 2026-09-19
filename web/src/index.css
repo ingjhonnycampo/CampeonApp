@@ -3936,9 +3936,7 @@ h1, h2, h3 {
   font-weight: 700;
   font-size: 0.85rem;
   line-height: 1.25;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .publico-torneo-banda-modalidad {
