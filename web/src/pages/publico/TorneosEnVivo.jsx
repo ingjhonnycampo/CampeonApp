@@ -7,6 +7,7 @@ import { useFilasAbiertas } from '../../lib/useFilasAbiertas';
 import CargaJugador from '../../components/CargaJugador';
 import FilaPartidoPublico from '../../components/FilaPartidoPublico';
 import AvisosPito from '../../components/AvisosPito';
+import AccesosEstadisticas from '../../components/AccesosEstadisticas';
 import EstadoCampeonato from '../../components/EstadoCampeonato';
 import { registrarVisita } from '../../lib/visitas';
 
@@ -31,14 +32,17 @@ async function cargarPartidosDe(torneo) {
 
 function BandaTorneo({ torneo }) {
   return (
-    <Link to={`/en-vivo/${torneo.slug}`} className="publico-torneo-banda">
-      {torneo.logo_url ? <img src={torneo.logo_url} alt="" /> : <span className="publico-torneo-banda-logo-vacio" />}
-      <span className="publico-torneo-banda-info">
-        <span className="publico-torneo-banda-nombre">{torneo.nombre}</span>
-        <span className="publico-torneo-banda-modalidad">{nombreModalidad(torneo.modalidad)}</span>
-      </span>
-      <EstadoCampeonato estado={torneo.estado} />
-    </Link>
+    <div className="publico-torneo-con-accesos">
+      <Link to={`/en-vivo/${torneo.slug}`} className="publico-torneo-banda">
+        {torneo.logo_url ? <img src={torneo.logo_url} alt="" /> : <span className="publico-torneo-banda-logo-vacio" />}
+        <span className="publico-torneo-banda-info">
+          <span className="publico-torneo-banda-nombre">{torneo.nombre}</span>
+          <span className="publico-torneo-banda-modalidad">{nombreModalidad(torneo.modalidad)}</span>
+        </span>
+        <EstadoCampeonato estado={torneo.estado} />
+      </Link>
+      <AccesosEstadisticas slug={torneo.slug} />
+    </div>
   );
 }
 
@@ -128,7 +132,7 @@ export default function TorneosEnVivo() {
         </button>
       </div>
 
-      {torneos.length > 1 && (
+      {torneos.length > 0 && (
         <>
           <h2 className="publico-en-vivo-seccion">Campeonatos</h2>
           <div className="publico-torneo-bandas">

@@ -4259,3 +4259,42 @@ h1, h2, h3 {
     padding-top: 36px;
   }
 }
+
+/* Atajos a posiciones / goleadores / sanciones de un campeonato (vista pública) */
+.publico-accesos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 14px;
+}
+
+.publico-acceso {
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent-strong);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: var(--shadow-suave);
+}
+
+.publico-acceso:hover {
+  border-color: var(--accent);
+}
+
+.publico-torneo-con-accesos .publico-accesos {
+  margin: 6px 0 10px;
+}
+
+.bienvenida-campeonatos {
+  width: 100%;
+  max-width: 720px;
+  margin: 28px auto 0;
+}
+
+.bienvenida-campeonatos h2 {
+  font-size: 1rem;
+  margin: 0 0 10px;
+}

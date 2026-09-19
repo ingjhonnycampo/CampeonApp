@@ -5,6 +5,7 @@ import { nombreModalidad } from '../../lib/modalidad';
 import CargaJugador from '../../components/CargaJugador';
 import LineaTiempoPartido from '../../components/LineaTiempoPartido';
 import RelojConAdicion from '../../components/RelojConAdicion';
+import AccesosEstadisticas from '../../components/AccesosEstadisticas';
 import { registrarVisita } from '../../lib/visitas';
 
 const ETIQUETA_TIEMPO = {
@@ -79,6 +80,7 @@ export default function PartidoPublico() {
         <span>·</span>
         <span>Jornada {partido.jornada}</span>
       </div>
+      <AccesosEstadisticas slug={partido.torneo_slug} />
 
       <div className="publico-partido-cabecera">
         <div className="publico-partido-equipo">

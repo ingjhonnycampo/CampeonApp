@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { nombreModalidad } from '../../lib/modalidad';
 import { activarSonido, usePitidos } from '../../lib/pitido';
@@ -180,8 +180,17 @@ export default function PartidosPublico() {
   const [stats, setStats] = useState(null);
   const [sanciones, setSanciones] = useState([]);
   const [expulsiones, setExpulsiones] = useState([]);
+  const [searchParams] = useSearchParams();
   const [pestana, setPestana] = useState('partidos');
   const [subPestana, setSubPestana] = useState('goleadores');
+
+  // ?ver=posiciones | goleadores | sanciones abre directo esa pestaña (atajos de AccesosEstadisticas)
+  useEffect(() => {
+    const ver = searchParams.get('ver');
+    if (ver === 'posiciones') setPestana('posiciones');
+    else if (ver === 'goleadores') { setPestana('estadisticas'); setSubPestana('goleadores'); }
+    else if (ver === 'sanciones') setPestana('sanciones');
+  }, [searchParams]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [sonidoActivo, setSonidoActivo] = useState(false);
