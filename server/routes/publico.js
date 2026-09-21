@@ -24,12 +24,11 @@ router.post('/visita', visitaLimiter, asyncHandler(async (req, res) => {
   res.status(201).json({ ok: true });
 }));
 
-// Una vez armado el fixture con los equipos ya aprobados, sumar un equipo nuevo
-// ya no es seguro (quedaría fuera del calendario) — así que las inscripciones se
-// consideran cerradas apenas eso pasa, sin importar si la fecha de cierre
-// configurada todavía no llegó.
+// Las inscripciones dependen solo de las fechas configuradas (desde/hasta), incluso
+// con el fixture ya generado y el campeonato en marcha: un equipo que entra tarde
+// se aprueba y luego se suma al calendario con "Ampliar fixture" (ver
+// POST /torneos/:id/regenerar-fixture-liga).
 function estadoInscripciones(torneo) {
-  if (torneo.fixture_generado) return 'cerrada';
   const ahora = new Date();
   if (torneo.inscripciones_desde && ahora < new Date(torneo.inscripciones_desde)) return 'no_abierta';
   if (torneo.inscripciones_hasta && ahora > new Date(torneo.inscripciones_hasta)) return 'cerrada';
@@ -148,8 +147,7 @@ router.get('/torneos', asyncHandler(async (req, res) => {
 
 // Campeonatos con inscripciones abiertas AHORA MISMO, para la pantalla de
 // bienvenida pública (usa el mismo estadoInscripciones que ya gobierna el
-// formulario real, así que un campeonato con fixture ya generado nunca
-// aparece acá — ver el comentario en esa función).
+// formulario real: depende solo de las fechas de inscripción).
 router.get('/torneos-inscripciones-abiertas', asyncHandler(async (req, res) => {
   const { rows } = await pool.query(
     `SELECT id, nombre, slug, modalidad, formato, logo_url, fixture_generado, inscripciones_desde, inscripciones_hasta
