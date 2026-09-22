@@ -406,7 +406,6 @@ function EquipoAlineacion({
             <NumeroCamisetaInput jugador={j} partido={partido} soloLectura={soloLectura} onGuardado={onListo} />
             <span className="planilla-alineacion-nombre">
               {j.nombre} <EdadMayor jugador={j} reglasCancha={reglasCancha} />
-              <SancionBadge jugador={j} onListo={onListo} soloLectura={soloLectura} />
             </span>
             <div className="planilla-segmentado">
               {['no', 'titular', 'suplente'].map((valor) => (
@@ -419,6 +418,7 @@ function EquipoAlineacion({
                 </button>
               ))}
             </div>
+            <SancionBadge jugador={j} onListo={onListo} soloLectura={soloLectura} />
           </div>
         ))}
       </div>

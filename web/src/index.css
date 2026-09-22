@@ -3019,25 +3019,43 @@ h1, h2, h3 {
   background: var(--crit);
 }
 
+/* El detalle de la sanción baja a su propia línea, de ancho completo, con fondo
+   propio — así el texto (que puede ser largo) tiene espacio para acomodarse en
+   vez de apretarse en una columna angosta junto al nombre. */
 .planilla-badge-sancionado--detalle {
-  display: inline-flex;
+  display: flex;
+  flex: 1 1 100%;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--crit);
+  font-weight: 600;
+  font-size: 0.78rem;
   white-space: normal;
+  text-align: left;
 }
 
 .planilla-badge-sancionado--detalle button {
   margin: 0;
-  padding: 3px 10px;
-  font-size: 0.72rem;
+  flex: none;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 
-/* Jugador que sigue sancionado (no está al día): se ve apagado y gris en la
-   pantalla previa al partido, aunque todavía no se le haya prohibido nada ahí
-   (la prohibición real es no poder anotar/entrar una vez arranca el partido). */
+/* Jugador que sigue sancionado (no está al día): la fila permite que el detalle
+   de la sanción baje de línea (ver arriba) en vez de apretarse. El nombre y el
+   número se mantienen legibles — lo que se apaga es solo el bloqueo real, que ya
+   queda claro con el color rojo del detalle. */
 .planilla-fila-sancionada {
-  opacity: 0.55;
-  filter: grayscale(1);
+  flex-wrap: wrap;
+  align-items: flex-start;
+  background: var(--crit-soft);
 }
 
 .planilla-edad-mayor {
