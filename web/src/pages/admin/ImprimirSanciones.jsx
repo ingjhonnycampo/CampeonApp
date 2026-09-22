@@ -53,12 +53,13 @@ export default function ImprimirSanciones() {
 
   const { torneo, sanciones, jornadas } = datos;
 
-  // "todas" = todo lo que está activo ahora mismo, sin importar a qué fecha
-  // bloquea. Una fecha puntual = solo lo que sigue bloqueando ESA fecha —
-  // incluye lo que se produjo en fechas anteriores y todavía no se puso al día.
+  // "todas" = todo lo que está activo ahora mismo. Una fecha puntual = lo que ya
+  // se había producido para esa fecha (jornadaOrigen <= fecha) y AÚN sigue activo
+  // (no se ha pagado/cumplido) — sale aparezca o no su equipo esa fecha en el
+  // fixture, porque la sanción inhabilita al jugador, no a una fecha concreta.
   const visibles = fecha === 'todas'
     ? sanciones
-    : sanciones.filter((s) => s.partidosBloqueadosJornadas.includes(Number(fecha)));
+    : sanciones.filter((s) => s.jornadaOrigen !== null && s.jornadaOrigen <= Number(fecha));
 
   const porBloque = { amarilla: [], azul: [], roja: [] };
   for (const s of visibles) porBloque[BLOQUE_DE[s.tipoSancion]].push(s);
