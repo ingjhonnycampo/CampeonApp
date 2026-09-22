@@ -4324,3 +4324,28 @@ h1, h2, h3 {
   border: 1px solid var(--ink-muted);
   border-radius: 3px;
 }
+
+/* Hoja imprimible de sanciones: selector de fecha en la barra, y un bloque por tipo */
+.imprimir-selector-fecha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+.imprimir-selector-fecha select {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.imprimir-sancion-bloque {
+  margin-bottom: 18px;
+}
+
+.imprimir-sancion-bloque h2 {
+  margin-bottom: 6px;
+}

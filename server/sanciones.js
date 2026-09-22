@@ -156,7 +156,12 @@ async function calcularSanciones(pool, torneoId) {
       proximoPartidoBloqueadoId: pendientes[0].id,
       proximaFechaBloqueada: pendientes[0].jornada,
       // Para el bloqueo real de alineación (todas las que apliquen, no solo la próxima).
-      partidosBloqueadosIds: pendientes.map((p) => p.id)
+      partidosBloqueadosIds: pendientes.map((p) => p.id),
+      partidosBloqueadosJornadas: pendientes.map((p) => p.jornada),
+      // Fecha en la que se mostró la tarjeta que originó esta sanción — para poder
+      // mostrar "sancionado desde la Jornada X" aunque ya vayan varias fechas
+      // bloqueadas sin que el equipo se haya puesto al día.
+      jornadaOrigen: idxOrigen === -1 ? null : partidos[idxOrigen].jornada
     });
   }
   return activas;

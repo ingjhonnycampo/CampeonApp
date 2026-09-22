@@ -922,7 +922,10 @@ export function SeccionSanciones({ torneoId }) {
 
   return (
     <section className="admin-card">
-      <h2>Sanciones por tarjeta (deportivas)</h2>
+      <div className="admin-form-linea">
+        <h2>Sanciones por tarjeta (deportivas)</h2>
+        <Link to={`/admin/imprimir/sanciones/${torneoId}`} target="_blank" className="admin-doc-link">Imprimir sanciones</Link>
+      </div>
       {sanciones.length === 0 && <p className="admin-empty">No hay jugadores sancionados en este momento.</p>}
       {[...porEquipo.entries()].map(([equipoNombre, lista]) => (
         <div key={equipoNombre} className="admin-sancion-equipo">
