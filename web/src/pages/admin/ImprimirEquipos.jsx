@@ -38,6 +38,8 @@ export default function ImprimirEquipos() {
             <th>Delegado</th>
             <th>Teléfono</th>
             <th>Estado</th>
+            <th>Valor pagado</th>
+            <th>Pagó</th>
           </tr>
         </thead>
         <tbody>
@@ -48,10 +50,12 @@ export default function ImprimirEquipos() {
               <td>{eq.delegado || '—'}</td>
               <td>{eq.delegado_telefono || '—'}</td>
               <td>{eq.estado}</td>
+              <td className="imprimir-cobro-blanco" />
+              <td className="imprimir-cobro-check" />
             </tr>
           ))}
           {equipos.length === 0 && (
-            <tr><td colSpan={5}>Todavía no hay equipos inscritos.</td></tr>
+            <tr><td colSpan={7}>Todavía no hay equipos inscritos.</td></tr>
           )}
         </tbody>
       </table>

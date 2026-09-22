@@ -4305,3 +4305,22 @@ h1, h2, h3 {
   font-size: 0.9rem;
   text-align: center;
 }
+
+/* Listado de equipos imprimible: casillas en blanco para el control de cobro manual */
+.imprimir-cobro-blanco {
+  min-width: 90px;
+}
+
+.imprimir-cobro-check {
+  width: 26px;
+}
+
+.imprimir-cobro-check::after {
+  content: '';
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin: 0 auto;
+  border: 1px solid var(--ink-muted);
+  border-radius: 3px;
+}
