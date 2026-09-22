@@ -167,6 +167,19 @@ async function calcularSanciones(pool, torneoId) {
   return activas;
 }
 
+// Detalle de la sanción por tarjeta (amarilla/azul/roja) que bloquea a cada
+// jugador para ESTE partido puntual, por jugador_id — para que el planillero vea
+// de qué se trata (multa, fechas que le faltan) y, si ya no debe fechas
+// obligatorias, pueda registrar el pago ahí mismo sin ir al panel de admin.
+async function sancionesTarjetaParaPartido(pool, torneoId, partidoId) {
+  const activas = await calcularSanciones(pool, torneoId);
+  const mapa = new Map();
+  for (const s of activas) {
+    if (s.partidosBloqueadosIds.includes(Number(partidoId))) mapa.set(s.jugadorId, s);
+  }
+  return mapa;
+}
+
 // Ids de jugadores que NO pueden estar en la alineación de este partido puntual
 // (ni titulares ni suplentes), para ese equipo — por tarjetas O por estar
 // expulsados definitivamente del campeonato.
@@ -371,7 +384,7 @@ async function calcularDisciplinaEquipo(pool, torneoId) {
 }
 
 module.exports = {
-  calcularSanciones, jugadoresSuspendidosParaPartido, obtenerReglas, guardarReglas, TIPOS_SANCION, DEFAULTS,
+  calcularSanciones, jugadoresSuspendidosParaPartido, sancionesTarjetaParaPartido, obtenerReglas, guardarReglas, TIPOS_SANCION, DEFAULTS,
   expulsarJugador, marcarMultaExpulsionPagada, calcularExpulsiones, jugadoresExpulsadosDelTorneo, equiposConMultaPendiente,
   crearDisciplinaJugador, marcarMultaDisciplinaJugadorPagada, calcularDisciplinaJugador,
   crearDisciplinaEquipo, marcarMultaDisciplinaEquipoPagada, calcularDisciplinaEquipo

@@ -8,6 +8,68 @@ import FirmaPad from '../../components/FirmaPad';
 import LineaTiempoPartido from '../../components/LineaTiempoPartido';
 import { maxTitulares as maxTitularesDe, usaAlineacionFormal, permiteTarjetaAzul } from '../../lib/modalidad';
 import { edadSiCumpleRegla } from '../../lib/edad';
+import { restriccionSancion } from '../../lib/sanciones';
+
+const ETIQUETA_SANCION = {
+  amarilla: 'Amarilla',
+  azul: 'Azul',
+  doble_amarilla: 'Doble amarilla',
+  roja_directa: 'Roja directa'
+};
+
+function formatoMulta(valor) {
+  return Number(valor) > 0 ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valor) : null;
+}
+
+// Detalle de la sanción de un jugador que sigue sin estar al día, con botón para
+// registrar el pago de la multa ahí mismo (lo puede hacer el planillero, no solo
+// el organizador) — pero eso SOLO paga la multa: si aún debe fechas de suspensión
+// obligatorias, el jugador sigue sin poder jugar este partido (se ve más abajo).
+function SancionBadge({ jugador, onListo, soloLectura }) {
+  const modal = useModal();
+  const [procesando, setProcesando] = useState(false);
+
+  if (jugador.expulsado) {
+    return <span className="planilla-badge-sancionado planilla-badge-sancionado--expulsado">⛔ Expulsado del campeonato</span>;
+  }
+  const s = jugador.sancionTarjeta;
+  if (!s) {
+    return jugador.suspendido ? <span className="planilla-badge-sancionado">🚫 Sancionado</span> : null;
+  }
+
+  async function habilitar() {
+    const avisoFechas = s.partidosObligatoriosPendientes > 0
+      ? ` Ojo: todavía le faltan ${s.partidosObligatoriosPendientes} fecha(s) de suspensión obligatoria — pagar no las salta, sigue sin poder jugar hasta cumplirlas.`
+      : ' Con esto queda habilitado para jugar.';
+    const confirmado = await modal.confirmar({
+      titulo: '¿Confirmar el pago de la multa?',
+      mensaje: `${jugador.nombre.trim()} — ${ETIQUETA_SANCION[s.tipoSancion]}${formatoMulta(s.multa) ? `, ${formatoMulta(s.multa)}` : ''}.${avisoFechas}`,
+      textoAceptar: 'Confirmar pago'
+    });
+    if (!confirmado) return;
+    setProcesando(true);
+    try {
+      await api(`/sanciones/${s.tarjetaId}/habilitar`, { method: 'POST' });
+      await onListo();
+    } catch (err) {
+      await modal.error(err.message, 'No se pudo registrar el pago');
+    } finally {
+      setProcesando(false);
+    }
+  }
+
+  return (
+    <span className="planilla-badge-sancionado planilla-badge-sancionado--detalle">
+      🚫 {ETIQUETA_SANCION[s.tipoSancion]} — {restriccionSancion(s)}
+      {formatoMulta(s.multa) && ` (${formatoMulta(s.multa)})`}
+      {!soloLectura && s.requierePago && (
+        <button type="button" className="admin-btn-editar" onClick={habilitar} disabled={procesando}>
+          {procesando ? 'Cobrando...' : 'Cobrar / Habilitar'}
+        </button>
+      )}
+    </span>
+  );
+}
 
 // Muestra la edad de un jugador en rojo cuando cumple alguna regla de edad del
 // torneo (ej. "mínimo 2 jugadores de 35+ años") — para que el árbitro/anotador
@@ -233,11 +295,9 @@ function ListaEquipo({ titulo, equipoId, jugadores, partido, reglasCancha, soloL
       <h2>{titulo}{confirmado && <span className="admin-badge-sorteado" style={{ marginLeft: 8 }}>Confirmado</span>}</h2>
       <div className="admin-list admin-list--alta">
         {jugadores.map((j) => (
-          <div key={j.id} className="admin-item admin-item--estatico">
+          <div key={j.id} className={'admin-item admin-item--estatico' + (j.suspendido ? ' planilla-fila-sancionada' : '')}>
             <span>#<NumeroCamisetaInput jugador={j} partido={partido} soloLectura={soloLectura} onGuardado={onListo} /> {j.nombre} <EdadMayor jugador={j} reglasCancha={reglasCancha} /></span>
-            {j.expulsado
-              ? <span className="planilla-badge-sancionado planilla-badge-sancionado--expulsado">⛔ Expulsado del campeonato</span>
-              : j.suspendido && <span className="planilla-badge-sancionado">🚫 Sancionado</span>}
+            <SancionBadge jugador={j} onListo={onListo} soloLectura={soloLectura} />
           </div>
         ))}
         {jugadores.length === 0 && <p className="admin-empty">Este equipo todavía no tiene jugadores validados.</p>}
@@ -342,13 +402,11 @@ function EquipoAlineacion({
       </p>
       <div className="planilla-alineacion-lista">
         {jugadores.map((j) => (
-          <div key={j.id} className="planilla-alineacion-fila">
+          <div key={j.id} className={'planilla-alineacion-fila' + (j.suspendido ? ' planilla-fila-sancionada' : '')}>
             <NumeroCamisetaInput jugador={j} partido={partido} soloLectura={soloLectura} onGuardado={onListo} />
             <span className="planilla-alineacion-nombre">
               {j.nombre} <EdadMayor jugador={j} reglasCancha={reglasCancha} />
-              {j.expulsado
-              ? <span className="planilla-badge-sancionado planilla-badge-sancionado--expulsado">⛔ Expulsado del campeonato</span>
-              : j.suspendido && <span className="planilla-badge-sancionado">🚫 Sancionado</span>}
+              <SancionBadge jugador={j} onListo={onListo} soloLectura={soloLectura} />
             </span>
             <div className="planilla-segmentado">
               {['no', 'titular', 'suplente'].map((valor) => (
@@ -603,7 +661,11 @@ function FilaJugador({ jugador, enBanca, goles, tarjetas, enviando, puedeAnotarG
   const roja = tarjetas.some((t) => t.jugador_id === jugador.id && t.tipo === 'roja');
   const azul = tarjetas.some((t) => t.jugador_id === jugador.id && t.tipo === 'azul');
   const expulsado = roja || amarillas >= 2;
-  const bloqueado = expulsado || azul;
+  // Un jugador que sigue sancionado de un partido anterior (no está al día con la
+  // multa y/o le faltan fechas de suspensión) no puede jugar este partido — se
+  // bloquea igual que un expulsado, aunque no haya pasado nada en ESTE partido.
+  const sancionado = jugador.suspendido && !expulsado;
+  const bloqueado = expulsado || azul || sancionado;
   // En banca no se pueden anotar goles, pero sí se puede mostrar tarjeta (antes de
   // entrar o después de haber sido reemplazado). El gol además exige que el
   // cronómetro esté corriendo.
@@ -618,6 +680,7 @@ function FilaJugador({ jugador, enBanca, goles, tarjetas, enviando, puedeAnotarG
         {enBanca && !bloqueado && <em className="planilla-jugador-tag">banca</em>}
         {expulsado && <em className="planilla-jugador-tag planilla-jugador-tag--expulsado">expulsado</em>}
         {!expulsado && azul && <em className="planilla-jugador-tag planilla-jugador-tag--azul">cambio obligatorio</em>}
+        {sancionado && <em className="planilla-jugador-tag planilla-jugador-tag--expulsado">sancionado</em>}
       </span>
       <span className="planilla-jugador-marcas">
         {golesJugador.length > 0 && <span className="planilla-marca-gol">⚽×{golesJugador.length}</span>}

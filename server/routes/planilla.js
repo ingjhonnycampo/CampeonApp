@@ -5,7 +5,7 @@ const { requireAuth, requireAccesoTorneo } = require('../middleware/auth');
 const { registrar } = require('../bitacora');
 const { guardarResultadoFinal } = require('../resultados');
 const { maxTitulares, usaAlineacionFormal, permiteTarjetaAzul } = require('../modalidades');
-const { jugadoresSuspendidosParaPartido, equiposConMultaPendiente, jugadoresExpulsadosDelTorneo } = require('../sanciones');
+const { jugadoresSuspendidosParaPartido, sancionesTarjetaParaPartido, equiposConMultaPendiente, jugadoresExpulsadosDelTorneo } = require('../sanciones');
 
 const router = express.Router();
 
@@ -122,8 +122,16 @@ router.get('/:id', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePa
   );
   const suspendidos = await jugadoresSuspendidosParaPartido(pool, partido.torneo_id, partido.id);
   const expulsados = await jugadoresExpulsadosDelTorneo(pool, partido.torneo_id);
-  const convocadosLocal = convocadosLocalRows.map((j) => ({ ...j, suspendido: suspendidos.has(j.id), expulsado: expulsados.has(j.id) }));
-  const convocadosVisitante = convocadosVisitanteRows.map((j) => ({ ...j, suspendido: suspendidos.has(j.id), expulsado: expulsados.has(j.id) }));
+  // Detalle de la sanción por tarjeta (multa, fechas que le faltan) para que el
+  // planillero vea de qué se trata y, si ya no debe fechas, pueda cobrar la multa
+  // ahí mismo — sin que eso habilite al jugador a jugar mientras deba fechas.
+  const sancionesTarjeta = await sancionesTarjetaParaPartido(pool, partido.torneo_id, partido.id);
+  const convocadosLocal = convocadosLocalRows.map((j) => ({
+    ...j, suspendido: suspendidos.has(j.id), expulsado: expulsados.has(j.id), sancionTarjeta: sancionesTarjeta.get(j.id) || null
+  }));
+  const convocadosVisitante = convocadosVisitanteRows.map((j) => ({
+    ...j, suspendido: suspendidos.has(j.id), expulsado: expulsados.has(j.id), sancionTarjeta: sancionesTarjeta.get(j.id) || null
+  }));
 
   // Reglas de edad del torneo (de planilla o en cancha, ej. "35+ años") — se usan en
   // el frontend para mostrarle al planillero la edad de los jugadores mayores que

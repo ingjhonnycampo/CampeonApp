@@ -17,8 +17,11 @@ router.get('/', requireAuth, requireAccesoTorneo((req) => req.query.torneo_id), 
   res.json(await calcularSanciones(pool, torneo_id));
 }));
 
-// Habilita al jugador (queda registrado que ya pagó la multa de esa tarjeta). Solo
-// el organizador o el admin lo pueden hacer — el árbitro/anotador no gestiona esto.
+// Habilita al jugador (queda registrado que ya pagó la multa de esa tarjeta). El
+// árbitro/planillero también puede hacerlo — es quien de verdad cobra en cancha
+// antes del partido — pero esto SOLO marca la multa como pagada: si el jugador
+// todavía debe fechas de suspensión obligatorias, sigue sin poder jugar (eso lo
+// sigue bloqueando jugadoresSuspendidosParaPartido sin importar este flag).
 router.post('/:tarjetaId/habilitar', requireAuth, requireAccesoTorneo(async (req) => {
   const { rows } = await pool.query(
     `SELECT p.torneo_id FROM partido_tarjetas t JOIN partidos p ON p.id = t.partido_id WHERE t.id = $1`,
@@ -26,10 +29,6 @@ router.post('/:tarjetaId/habilitar', requireAuth, requireAccesoTorneo(async (req
   );
   return rows[0]?.torneo_id;
 }), asyncHandler(async (req, res) => {
-  if (req.usuario.rol === 'arbitro') {
-    return res.status(403).json({ error: 'Solo el organizador o el admin pueden habilitar a un jugador sancionado' });
-  }
-
   const { rows: tarjetaRows } = await pool.query(
     `SELECT t.*, j.nombre AS jugador_nombre, p.torneo_id
      FROM partido_tarjetas t JOIN jugadores j ON j.id = t.jugador_id JOIN partidos p ON p.id = t.partido_id

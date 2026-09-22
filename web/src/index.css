@@ -3019,6 +3019,27 @@ h1, h2, h3 {
   background: var(--crit);
 }
 
+.planilla-badge-sancionado--detalle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: normal;
+}
+
+.planilla-badge-sancionado--detalle button {
+  margin: 0;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+}
+
+/* Jugador que sigue sancionado (no está al día): se ve apagado y gris en la
+   pantalla previa al partido, aunque todavía no se le haya prohibido nada ahí
+   (la prohibición real es no poder anotar/entrar una vez arranca el partido). */
+.planilla-fila-sancionada {
+  opacity: 0.55;
+  filter: grayscale(1);
+}
+
 .planilla-edad-mayor {
   color: var(--crit);
   font-weight: 700;
