@@ -130,9 +130,13 @@ export default function AdminCampeonatos() {
   }
 
   async function guardarEquipo(equipoId, cambios) {
-    await api(`/equipos/${equipoId}`, { method: 'PATCH', body: JSON.stringify(cambios) });
-    await cargarEquipos(torneoActivo);
-    await modal.exito('Los datos del equipo se guardaron correctamente.');
+    try {
+      await api(`/equipos/${equipoId}`, { method: 'PATCH', body: JSON.stringify(cambios) });
+      await cargarEquipos(torneoActivo);
+      await modal.exito('Los datos del equipo se guardaron correctamente.');
+    } catch (err) {
+      await modal.error(err.message, 'No se pudo guardar el equipo');
+    }
   }
 
   async function validarJugador(jugadorId, estado_validacion, nombreJugador) {
@@ -144,15 +148,23 @@ export default function AdminCampeonatos() {
     });
     if (!confirmado) return;
 
-    await api(`/jugadores/${jugadorId}`, { method: 'PATCH', body: JSON.stringify({ estado_validacion }) });
-    await cargarEquipos(torneoActivo);
-    await modal.exito(estado_validacion === 'validado' ? 'Edad validada correctamente.' : 'Quedó marcada como rechazada y el equipo se reabrió.');
+    try {
+      await api(`/jugadores/${jugadorId}`, { method: 'PATCH', body: JSON.stringify({ estado_validacion }) });
+      await cargarEquipos(torneoActivo);
+      await modal.exito(estado_validacion === 'validado' ? 'Edad validada correctamente.' : 'Quedó marcada como rechazada y el equipo se reabrió.');
+    } catch (err) {
+      await modal.error(err.message, 'No se pudo actualizar la validación');
+    }
   }
 
   async function guardarJugador(jugadorId, cambios) {
-    await api(`/jugadores/${jugadorId}`, { method: 'PATCH', body: JSON.stringify(cambios) });
-    await cargarEquipos(torneoActivo);
-    await modal.exito('Los datos del jugador se guardaron correctamente.');
+    try {
+      await api(`/jugadores/${jugadorId}`, { method: 'PATCH', body: JSON.stringify(cambios) });
+      await cargarEquipos(torneoActivo);
+      await modal.exito('Los datos del jugador se guardaron correctamente.');
+    } catch (err) {
+      await modal.error(err.message, 'No se pudo guardar el jugador');
+    }
   }
 
   async function eliminarJugador(jugadorId, nombreJugador) {
@@ -164,15 +176,23 @@ export default function AdminCampeonatos() {
     });
     if (!confirmado) return;
 
-    await api(`/jugadores/${jugadorId}`, { method: 'DELETE' });
-    await cargarEquipos(torneoActivo);
-    await modal.exito('El jugador fue quitado de la planilla.');
+    try {
+      await api(`/jugadores/${jugadorId}`, { method: 'DELETE' });
+      await cargarEquipos(torneoActivo);
+      await modal.exito('El jugador fue quitado de la planilla.');
+    } catch (err) {
+      await modal.error(err.message, 'No se pudo quitar el jugador');
+    }
   }
 
   async function agregarJugador(equipoId, datos) {
-    await api('/jugadores', { method: 'POST', body: JSON.stringify({ ...datos, equipo_id: equipoId }) });
-    await cargarEquipos(torneoActivo);
-    await modal.exito('Jugador agregado a la planilla.');
+    try {
+      await api('/jugadores', { method: 'POST', body: JSON.stringify({ ...datos, equipo_id: equipoId }) });
+      await cargarEquipos(torneoActivo);
+      await modal.exito('Jugador agregado a la planilla.');
+    } catch (err) {
+      await modal.error(err.message, 'No se pudo agregar el jugador');
+    }
   }
 
   const torneo = torneos.find((t) => t.id === torneoActivo);
