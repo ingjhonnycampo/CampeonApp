@@ -129,6 +129,12 @@ export default function AdminCampeonatos() {
     }
   }
 
+  async function guardarEquipo(equipoId, cambios) {
+    await api(`/equipos/${equipoId}`, { method: 'PATCH', body: JSON.stringify(cambios) });
+    await cargarEquipos(torneoActivo);
+    await modal.exito('Los datos del equipo se guardaron correctamente.');
+  }
+
   async function validarJugador(jugadorId, estado_validacion, nombreJugador) {
     const confirmado = await modal.confirmar({
       titulo: estado_validacion === 'validado' ? '¿Validar la edad de este jugador?' : '¿Rechazar la edad de este jugador?',
@@ -190,6 +196,7 @@ export default function AdminCampeonatos() {
           reglasPlanilla={reglasPlanilla}
           onAprobarEquipo={aprobarEquipo}
           onBajaEquipo={bajaEquipo}
+          onGuardarEquipo={guardarEquipo}
           onValidarJugador={validarJugador}
           onGuardarJugador={guardarJugador}
           onEliminarJugador={eliminarJugador}
@@ -474,7 +481,7 @@ function SeccionCampeonatos({ torneos, activo, onSelect, onGuardar, puedeCrear }
 
 function SeccionInscripciones({
   torneo, equipos, jugadoresPorEquipo, reglasPlanilla,
-  onAprobarEquipo, onBajaEquipo, onValidarJugador, onGuardarJugador, onEliminarJugador, onAgregarJugador
+  onAprobarEquipo, onBajaEquipo, onGuardarEquipo, onValidarJugador, onGuardarJugador, onEliminarJugador, onAgregarJugador
 }) {
   const [expandido, setExpandido] = useState(null);
 
@@ -506,6 +513,7 @@ function SeccionInscripciones({
             onToggle={() => setExpandido(expandido === eq.id ? null : eq.id)}
             onAprobarEquipo={onAprobarEquipo}
             onBajaEquipo={onBajaEquipo}
+            onGuardarEquipo={onGuardarEquipo}
             onValidarJugador={onValidarJugador}
             onGuardarJugador={onGuardarJugador}
             onEliminarJugador={onEliminarJugador}
@@ -567,13 +575,53 @@ function FormularioEdicionJugador({ jugador, onGuardar, onCancelar }) {
   );
 }
 
+function FormularioEdicionEquipo({ equipo, onGuardar, onCancelar }) {
+  const [form, setForm] = useState({
+    nombre: equipo.nombre,
+    delegado: equipo.delegado || '',
+    delegado_telefono: equipo.delegado_telefono || ''
+  });
+  const [guardando, setGuardando] = useState(false);
+
+  async function guardar() {
+    setGuardando(true);
+    try {
+      await onGuardar(equipo.id, form);
+      onCancelar();
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  return (
+    <div className="admin-jugador-edicion">
+      <label>Nombre del equipo
+        <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
+      </label>
+      <div className="admin-form-row">
+        <label>Delegado
+          <input value={form.delegado} onChange={(e) => setForm({ ...form, delegado: e.target.value })} />
+        </label>
+        <label>Teléfono del delegado
+          <input value={form.delegado_telefono} onChange={(e) => setForm({ ...form, delegado_telefono: e.target.value })} />
+        </label>
+      </div>
+      <div className="admin-equipo-acciones">
+        <button type="button" className="admin-btn-ok" onClick={guardar} disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar'}</button>
+        <button type="button" className="admin-btn-neutro" onClick={onCancelar}>Cancelar</button>
+      </div>
+    </div>
+  );
+}
+
 function EquipoInscrito({
-  equipo, jugadores, reglasPlanilla, expandido, onToggle, onAprobarEquipo, onBajaEquipo, onValidarJugador,
+  equipo, jugadores, reglasPlanilla, expandido, onToggle, onAprobarEquipo, onBajaEquipo, onGuardarEquipo, onValidarJugador,
   onGuardarJugador, onEliminarJugador, onAgregarJugador, fechaReferencia
 }) {
   const [nuevoJugador, setNuevoJugador] = useState(JUGADOR_VACIO_ADMIN());
   const [agregando, setAgregando] = useState(false);
   const [editandoJugadorId, setEditandoJugadorId] = useState(null);
+  const [editandoEquipo, setEditandoEquipo] = useState(false);
 
   async function onAgregar(e) {
     e.preventDefault();
@@ -633,6 +681,9 @@ function EquipoInscrito({
           <div className="admin-equipo-acciones">
             <button type="button" className="admin-btn-ok" onClick={() => onAprobarEquipo(equipo.id, 'aprobado', equipo.nombre)}>Aprobar equipo</button>
             <button type="button" className="admin-btn-mal" onClick={() => onAprobarEquipo(equipo.id, 'rechazado', equipo.nombre)}>Rechazar equipo</button>
+            <button type="button" className="admin-btn-editar" onClick={() => setEditandoEquipo((v) => !v)}>
+              {editandoEquipo ? 'Cerrar' : 'Editar equipo/delegado'}
+            </button>
             <Link to={`/admin/imprimir/equipo/${equipo.id}`} target="_blank" className="admin-doc-link">Imprimir planilla</Link>
             {equipo.estado_torneo === 'activo' && (
               <>
@@ -641,6 +692,10 @@ function EquipoInscrito({
               </>
             )}
           </div>
+
+          {editandoEquipo && (
+            <FormularioEdicionEquipo equipo={equipo} onGuardar={onGuardarEquipo} onCancelar={() => setEditandoEquipo(false)} />
+          )}
 
           {jugadores.map((j) => {
             const edad = calcularEdad(j.fecha_nacimiento, fechaReferencia);

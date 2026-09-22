@@ -40,21 +40,41 @@ router.patch('/:id', requireAuth, requireAccesoTorneo(async (req) => {
   const { rows } = await pool.query('SELECT torneo_id FROM equipos WHERE id = $1', [req.params.id]);
   return rows[0]?.torneo_id;
 }, ['organizador']), asyncHandler(async (req, res) => {
-  const { estado } = req.body;
-  if (!['pendiente', 'aprobado', 'rechazado'].includes(estado)) {
+  const { estado, nombre, delegado, delegado_telefono } = req.body;
+
+  const actual = (await pool.query('SELECT * FROM equipos WHERE id = $1', [req.params.id])).rows[0];
+  if (!actual) return res.status(404).json({ error: 'Equipo no encontrado' });
+
+  if (estado !== undefined && !['pendiente', 'aprobado', 'rechazado'].includes(estado)) {
     return res.status(400).json({ error: 'estado inválido' });
   }
-  const { rows } = await pool.query(
-    'UPDATE equipos SET estado = $1 WHERE id = $2 RETURNING *',
-    [estado, req.params.id]
-  );
-  if (!rows[0]) return res.status(404).json({ error: 'Equipo no encontrado' });
+  if (nombre !== undefined && !nombre.trim()) {
+    return res.status(400).json({ error: 'El nombre del equipo es obligatorio' });
+  }
 
-  const verbo = { aprobado: 'Aprobó', rechazado: 'Rechazó', pendiente: 'Puso en pendiente' }[estado];
-  await registrar(pool, {
-    torneoId: rows[0].torneo_id, usuarioId: req.usuario.id,
-    accion: `${verbo} el equipo "${rows[0].nombre}"`
-  });
+  const { rows } = await pool.query(
+    `UPDATE equipos SET estado = $1, nombre = $2, delegado = $3, delegado_telefono = $4 WHERE id = $5 RETURNING *`,
+    [
+      estado ?? actual.estado,
+      nombre !== undefined ? nombre.trim() : actual.nombre,
+      delegado !== undefined ? (delegado || null) : actual.delegado,
+      delegado_telefono !== undefined ? (delegado_telefono || null) : actual.delegado_telefono,
+      req.params.id
+    ]
+  );
+
+  if (estado !== undefined && estado !== actual.estado) {
+    const verbo = { aprobado: 'Aprobó', rechazado: 'Rechazó', pendiente: 'Puso en pendiente' }[estado];
+    await registrar(pool, {
+      torneoId: rows[0].torneo_id, usuarioId: req.usuario.id,
+      accion: `${verbo} el equipo "${rows[0].nombre}"`
+    });
+  } else if (nombre !== undefined || delegado !== undefined || delegado_telefono !== undefined) {
+    await registrar(pool, {
+      torneoId: rows[0].torneo_id, usuarioId: req.usuario.id,
+      accion: `Editó los datos del equipo "${rows[0].nombre}" (nombre/delegado/teléfono)`
+    });
+  }
 
   res.json(rows[0]);
 }));
