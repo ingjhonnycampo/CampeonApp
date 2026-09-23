@@ -75,7 +75,7 @@ function ImprimirProgramacionGeneralConDatos({ torneos, activos, onAlternar, dia
   });
 
   return (
-    <div className="imprimir-page">
+    <div className="imprimir-page imprimir-page--flyer">
       <div className="imprimir-barra no-imprimir">
         <Link to="/admin/fixture">← Volver al panel</Link>
         <label className="imprimir-selector-fecha">
@@ -96,50 +96,58 @@ function ImprimirProgramacionGeneralConDatos({ torneos, activos, onAlternar, dia
         {torneos.length === 0 && <span className="admin-empty">No hay campeonatos con fixture generado.</span>}
       </div>
 
-      <header className="imprimir-header">
-        <div>
-          <h1>Programación del día</h1>
-          <p>{tituloDia}</p>
-        </div>
-      </header>
+      <div className="programacion-flyer">
+        <header className="programacion-flyer-header">
+          <span className="programacion-flyer-eyebrow">⚽ Programación del día</span>
+          <h1>{tituloDia}</h1>
+        </header>
 
-      {cargando && <CargaJugador texto="Cargando los partidos..." />}
+        {cargando && <CargaJugador texto="Cargando los partidos..." />}
 
-      {!cargando && delDia.length === 0 && <p className="admin-empty">No hay partidos programados para esta fecha en los campeonatos elegidos.</p>}
+        {!cargando && delDia.length === 0 && (
+          <p className="admin-empty" style={{ margin: '20px 24px' }}>No hay partidos programados para esta fecha en los campeonatos elegidos.</p>
+        )}
 
-      {!cargando && delDia.length > 0 && (
-        <table className="imprimir-tabla">
-          <thead>
-            <tr>
-              <th>Hora</th>
-              <th>Local</th>
-              <th></th>
-              <th>Visitante</th>
-              <th>Campeonato</th>
-              <th>Jornada</th>
-            </tr>
-          </thead>
-          <tbody>
+        {!cargando && delDia.length > 0 && (
+          <div className="programacion-flyer-lista">
             {delDia.map((p) => (
-              <tr key={p.id}>
-                <td>{new Date(p.fecha_hora).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })}</td>
-                <td>{p.equipo_local_nombre}</td>
-                <td style={{ textAlign: 'center' }}>vs</td>
-                <td>{p.equipo_visitante_nombre}</td>
-                <td>
-                  {p._torneoNombre}
-                  {p._torneoGenero && ` (${ETIQUETA_GENERO[p._torneoGenero]})`}
-                </td>
-                <td>{p._faseNombre || `Fecha ${p.jornada}`}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+              <div key={p.id} className="programacion-flyer-partido">
+                <div className="programacion-flyer-equipo">
+                  <EscudoFlyer url={p.equipo_local_escudo} nombre={p.equipo_local_nombre} />
+                  <span className="programacion-flyer-nombre">{p.equipo_local_nombre}</span>
+                </div>
 
-      <p className="imprimir-pie">
-        Generado el {new Date().toLocaleString('es-CO')} — CampeonApp
-      </p>
+                <div className="programacion-flyer-centro">
+                  <span className="programacion-flyer-hora">
+                    {new Date(p.fecha_hora).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })}
+                  </span>
+                  <span className="programacion-flyer-vs">VS</span>
+                  <span className="programacion-flyer-tag">
+                    {p._faseNombre || `Fecha ${p.jornada}`}
+                    {delDia.some((otro) => otro.id !== p.id && otro._torneoNombre !== p._torneoNombre) && (
+                      <> · {p._torneoGenero ? ETIQUETA_GENERO[p._torneoGenero] : p._torneoNombre}</>
+                    )}
+                  </span>
+                </div>
+
+                <div className="programacion-flyer-equipo">
+                  <EscudoFlyer url={p.equipo_visitante_escudo} nombre={p.equipo_visitante_nombre} />
+                  <span className="programacion-flyer-nombre">{p.equipo_visitante_nombre}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p className="programacion-flyer-pie">CampeonApp — {new Date().toLocaleDateString('es-CO')}</p>
+      </div>
     </div>
+  );
+}
+
+function EscudoFlyer({ url, nombre }) {
+  if (url) return <img src={url} alt={nombre} className="programacion-flyer-escudo" />;
+  return (
+    <span className="programacion-flyer-escudo programacion-flyer-escudo--vacio" aria-hidden="true">⚽</span>
   );
 }
