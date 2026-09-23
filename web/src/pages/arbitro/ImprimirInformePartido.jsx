@@ -17,7 +17,7 @@ export default function ImprimirInformePartido() {
 
   if (cargando || !datos) return <CargaJugador texto="Cargando el informe..." />;
 
-  const { partido, goles, tarjetas, cambios, hitos } = datos;
+  const { partido, goles, tarjetas, cambios, faltas, hitos } = datos;
 
   return (
     <div className="imprimir-page imprimir-page--informe">
@@ -64,7 +64,7 @@ export default function ImprimirInformePartido() {
         </p>
       )}
 
-      <LineaTiempoPartido partido={partido} goles={goles} tarjetas={tarjetas} cambios={cambios} hitos={hitos} />
+      <LineaTiempoPartido partido={partido} goles={goles} tarjetas={tarjetas} cambios={cambios} faltas={faltas} hitos={hitos} />
 
       <div className="imprimir-informe-firma">
         <h3>Certifica</h3>

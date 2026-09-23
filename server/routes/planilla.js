@@ -172,7 +172,10 @@ router.get('/:id', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePa
     [req.params.id]
   );
   const { rows: faltas } = await pool.query(
-    'SELECT * FROM partido_faltas WHERE partido_id = $1 ORDER BY creado_en',
+    `SELECT f.*, j.nombre AS jugador_nombre, COALESCE(pn.numero, j.numero_camiseta) AS jugador_numero
+     FROM partido_faltas f JOIN jugadores j ON j.id = f.jugador_id
+     LEFT JOIN partido_numero_camiseta pn ON pn.jugador_id = j.id AND pn.partido_id = f.partido_id
+     WHERE f.partido_id = $1 ORDER BY f.minuto NULLS LAST, f.creado_en`,
     [req.params.id]
   );
 
@@ -629,6 +632,12 @@ router.post('/:id/falta', requireAuth, requireAccesoTorneo((req) => obtenerTorne
   const equipoEnFaltaAcumulada = Number(countEquipoRows[0].count) === 5;
 
   res.status(201).json({ ...falta, expulsadoPorFaltas, equipoEnFaltaAcumulada });
+}));
+
+router.delete('/:id/falta/:faltaId', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePartido(req.params.id)), soloArbitro, asyncHandler(async (req, res) => {
+  const { rows } = await pool.query('DELETE FROM partido_faltas WHERE id = $1 AND partido_id = $2 RETURNING *', [req.params.faltaId, req.params.id]);
+  if (!rows[0]) return res.status(404).json({ error: 'Esa falta no existe' });
+  res.json({ ok: true });
 }));
 
 // Cambio: el que sale queda con su minuto de salida, el que entra queda (o se

@@ -160,7 +160,7 @@ export default function FilaPartidoPublico({ partido, abierto, onAbrir, fijado, 
               ahora {detalle.correccion.goles_local_nuevo}-{detalle.correccion.goles_visitante_nuevo}. Motivo: {detalle.correccion.motivo}
             </p>
           )}
-          <LineaTiempoPartido partido={detalle.partido} goles={detalle.goles} tarjetas={detalle.tarjetas} cambios={detalle.cambios} hitos={detalle.hitos} />
+          <LineaTiempoPartido partido={detalle.partido} goles={detalle.goles} tarjetas={detalle.tarjetas} cambios={detalle.cambios} faltas={detalle.faltas} hitos={detalle.hitos} />
         </div>
       )}
     </div>

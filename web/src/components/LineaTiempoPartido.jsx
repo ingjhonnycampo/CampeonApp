@@ -24,6 +24,7 @@ function numero(n) {
 
 function EventoTexto({ ev }) {
   if (ev._tipo === 'gol') return <>⚽ {numero(ev.jugador_numero)}{ev.jugador_nombre || 'Jugador'}{ev.en_propia_puerta ? ' (en propia puerta)' : ''}</>;
+  if (ev._tipo === 'falta') return <>🦵 {numero(ev.jugador_numero)}{ev.jugador_nombre}</>;
   if (ev._tipo === 'cambio') {
     return (
       <>
@@ -52,11 +53,12 @@ function FilaHito({ hito }) {
 // cronómetro (inicio/fin de cada tiempo) van centrados al principio y al final
 // de cada sección. La usan el informe imprimible, la vista pública en vivo y la
 // planilla del árbitro (esta última con onQuitar, para deshacer un evento).
-export default function LineaTiempoPartido({ partido, goles, tarjetas, cambios, hitos = [], onQuitar }) {
+export default function LineaTiempoPartido({ partido, goles, tarjetas, cambios, faltas = [], hitos = [], onQuitar }) {
   const todos = [
     ...goles.map((g) => ({ ...g, _tipo: 'gol' })),
     ...tarjetas.map((t) => ({ ...t, _tipo: 'tarjeta' })),
-    ...cambios.map((c) => ({ ...c, _tipo: 'cambio' }))
+    ...cambios.map((c) => ({ ...c, _tipo: 'cambio' })),
+    ...faltas.map((f) => ({ ...f, _tipo: 'falta' }))
   ];
 
   const porTiempo = { primer_tiempo: [], segundo_tiempo: [], sin_tiempo: [] };
@@ -84,12 +86,13 @@ export default function LineaTiempoPartido({ partido, goles, tarjetas, cambios, 
     .filter(([clave, eventos]) => eventos.length > 0 || hitosPorTiempo[clave]?.inicio || hitosPorTiempo[clave]?.fin);
 
   if (secciones.length === 0) {
-    return <p className="admin-empty" style={{ textAlign: 'center' }}>No hubo goles, tarjetas ni cambios en este partido.</p>;
+    return <p className="admin-empty" style={{ textAlign: 'center' }}>No hubo goles, tarjetas, cambios ni faltas en este partido.</p>;
   }
 
   function quitar(ev) {
     if (ev._tipo === 'gol') onQuitar('gol', ev.id);
     else if (ev._tipo === 'tarjeta') onQuitar('tarjeta', ev.id);
+    else if (ev._tipo === 'falta') onQuitar('falta', ev.id);
     else onQuitar('cambio', ev.id);
   }
 

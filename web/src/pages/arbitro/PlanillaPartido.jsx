@@ -883,7 +883,8 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
     const mensajes = {
       gol: { titulo: '¿Quitar este gol?', textoAceptar: 'Quitar' },
       tarjeta: { titulo: '¿Quitar esta tarjeta?', textoAceptar: 'Quitar' },
-      cambio: { titulo: '¿Deshacer este cambio?', textoAceptar: 'Deshacer' }
+      cambio: { titulo: '¿Deshacer este cambio?', textoAceptar: 'Deshacer' },
+      falta: { titulo: '¿Quitar esta falta?', textoAceptar: 'Quitar' }
     };
     const confirmado = await modal.confirmar({ ...mensajes[tipo], peligro: true });
     if (!confirmado) return;
@@ -1000,7 +1001,7 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
       <section className="admin-card">
         <h2>Eventos del partido</h2>
         <LineaTiempoPartido
-          partido={partido} goles={goles} tarjetas={tarjetas} cambios={cambios} hitos={hitos}
+          partido={partido} goles={goles} tarjetas={tarjetas} cambios={cambios} faltas={faltas} hitos={hitos}
           onQuitar={soloLectura ? undefined : quitarEvento}
         />
       </section>

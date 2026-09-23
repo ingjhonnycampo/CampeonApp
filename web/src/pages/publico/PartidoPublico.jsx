@@ -64,7 +64,7 @@ export default function PartidoPublico() {
 
   if (cargando || !datos) return <CargaJugador texto="Cargando el partido..." />;
 
-  const { partido, goles, tarjetas, cambios, hitos, correccion } = datos;
+  const { partido, goles, tarjetas, cambios, faltas, hitos, correccion } = datos;
   const enVivo = partido.estado === 'en_curso';
   const finalizado = partido.estado === 'jugado';
 
@@ -121,7 +121,7 @@ export default function PartidoPublico() {
         </p>
       )}
 
-      <LineaTiempoPartido partido={partido} goles={goles} tarjetas={tarjetas} cambios={cambios} hitos={hitos} />
+      <LineaTiempoPartido partido={partido} goles={goles} tarjetas={tarjetas} cambios={cambios} faltas={faltas} hitos={hitos} />
     </div>
   );
 }

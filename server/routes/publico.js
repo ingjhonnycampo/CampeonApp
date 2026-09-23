@@ -449,6 +449,13 @@ router.get('/partidos/:id', asyncHandler(async (req, res) => {
     'SELECT id, tipo, minuto, minuto_adicion, tiempo FROM partido_hitos WHERE partido_id = $1 ORDER BY id',
     [req.params.id]
   );
+  const { rows: faltas } = await pool.query(
+    `SELECT f.id, f.equipo_id, f.jugador_id, f.minuto, f.minuto_adicion, f.tiempo, f.creado_en, j.nombre AS jugador_nombre, COALESCE(pn.numero, j.numero_camiseta) AS jugador_numero
+     FROM partido_faltas f JOIN jugadores j ON j.id = f.jugador_id
+     LEFT JOIN partido_numero_camiseta pn ON pn.jugador_id = j.id AND pn.partido_id = f.partido_id
+     WHERE f.partido_id = $1 ORDER BY f.tiempo NULLS LAST, f.minuto NULLS LAST, f.creado_en`,
+    [req.params.id]
+  );
 
   // Si el resultado de este partido fue corregido después de finalizado (por un
   // reclamo, una sanción, etc.), el público debe poder ver por qué quedó así — no
@@ -459,7 +466,7 @@ router.get('/partidos/:id', asyncHandler(async (req, res) => {
     [req.params.id]
   );
 
-  res.json({ partido, goles, tarjetas, cambios, hitos, correccion: ultimaEdicion[0] || null });
+  res.json({ partido, goles, tarjetas, cambios, hitos, faltas, correccion: ultimaEdicion[0] || null });
 }));
 
 module.exports = router;
