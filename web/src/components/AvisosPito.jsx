@@ -12,9 +12,13 @@ export default function AvisosPito({ avisos }) {
     <div className="publico-pitido-lista">
       {avisos.map((a) => (
         <div key={a.id} className="publico-pitido-aviso">
-          {a.tipo === 'cambio'
-            ? <IconoCambio size={18} className="publico-pitido-icono publico-pitido-icono--cambio" />
-            : <IconoPito size={22} className="publico-pitido-icono" />}
+          {a.tipo === 'cambio' ? (
+            <IconoCambio size={18} className="publico-pitido-icono publico-pitido-icono--cambio" />
+          ) : a.tipo === 'falta' ? (
+            <span className="publico-pitido-icono publico-pitido-icono--falta" aria-hidden="true">🦵</span>
+          ) : (
+            <IconoPito size={22} className="publico-pitido-icono" />
+          )}
           <span>
             <strong>{a.texto}</strong>
             <small>{a.equipos}</small>

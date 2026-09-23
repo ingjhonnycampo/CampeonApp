@@ -14,7 +14,7 @@ function obtenerContexto() {
 // Un pitido de silbato de árbitro real "tiembla" (la bolita adentro vibra contra
 // el aire) — eso se simula con un tono agudo cuya frecuencia oscila rápido
 // (vibrato), en vez de un tono puro y plano que suena más a timbre de microondas.
-function unPitido(inicioEn, duracion = 0.32) {
+function unPitido(inicioEn, duracion = 0.32, frecuencia = 2900, gananciaMax = 0.3) {
   const ctx = obtenerContexto();
   const osc = ctx.createOscillator();
   const vibrato = ctx.createOscillator();
@@ -22,7 +22,7 @@ function unPitido(inicioEn, duracion = 0.32) {
   const ganancia = ctx.createGain();
 
   osc.type = 'triangle';
-  osc.frequency.value = 2900;
+  osc.frequency.value = frecuencia;
 
   vibrato.type = 'sine';
   vibrato.frequency.value = 26; // velocidad del temblor de la bolita
@@ -31,8 +31,8 @@ function unPitido(inicioEn, duracion = 0.32) {
   vibratoGain.connect(osc.frequency);
 
   ganancia.gain.setValueAtTime(0.0001, inicioEn);
-  ganancia.gain.exponentialRampToValueAtTime(0.3, inicioEn + 0.015);
-  ganancia.gain.setValueAtTime(0.3, inicioEn + duracion - 0.06);
+  ganancia.gain.exponentialRampToValueAtTime(gananciaMax, inicioEn + 0.015);
+  ganancia.gain.setValueAtTime(gananciaMax, inicioEn + duracion - 0.06);
   ganancia.gain.exponentialRampToValueAtTime(0.0001, inicioEn + duracion);
 
   osc.connect(ganancia);
@@ -70,6 +70,18 @@ export function sonarPitido(cantidad = 1) {
   }
 }
 
+// Pitido de falta: un toque corto y más grave que el silbatazo de gol/tarjeta —
+// se oye claramente distinto, sin sonar tan "importante" como un pito completo,
+// porque una falta es un evento mucho más frecuente durante el partido.
+export function sonarPitidoFalta() {
+  try {
+    const ctx = obtenerContexto();
+    unPitido(ctx.currentTime, 0.14, 1500, 0.18);
+  } catch {
+    // Sin soporte de audio; no interrumpe la página.
+  }
+}
+
 const TEXTO_TRANSICION = {
   primer_tiempo: { texto: 'Inició el partido', cantidad: 1 },
   descanso: { texto: 'Finalizó el primer tiempo', cantidad: 2 },
@@ -86,7 +98,8 @@ export function usePitidos() {
   const [avisos, setAvisos] = useState([]);
 
   const anunciar = useCallback((texto, equipos, cantidad = 1, tipo = 'evento') => {
-    sonarPitido(cantidad);
+    if (tipo === 'falta') sonarPitidoFalta();
+    else sonarPitido(cantidad);
     const id = `${Math.random().toString(36).slice(2)}-${Date.now()}`;
     setAvisos((actuales) => [...actuales, { id, texto, equipos, tipo }]);
     setTimeout(() => setAvisos((actuales) => actuales.filter((a) => a.id !== id)), 6000);

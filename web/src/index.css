@@ -4067,6 +4067,11 @@ h1, h2, h3 {
   color: #fff;
 }
 
+.publico-pitido-icono--falta {
+  font-size: 20px;
+  line-height: 1;
+}
+
 .publico-pitido-icono--cambio {
   background: #fff;
   border-radius: 50%;
