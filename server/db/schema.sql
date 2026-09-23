@@ -311,6 +311,23 @@ CREATE TABLE IF NOT EXISTS partido_tarjetas (
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Faltas personales acumulables (microfútbol/fútbol sala): cada una se cuenta
+-- para dos cosas independientes — el total del JUGADOR en todo el partido (a la
+-- 5ta, tarjeta azul automática) y el total del EQUIPO en el tiempo actual (a la
+-- 5ta, el próximo tiro libre en contra de ese equipo es directo). El del equipo
+-- se calcula filtrando por `tiempo`, así que se "reinicia" solo al pasar de
+-- tiempo sin necesidad de borrar ni tocar nada — ver server/sanciones.js/planilla.js.
+CREATE TABLE IF NOT EXISTS partido_faltas (
+  id SERIAL PRIMARY KEY,
+  partido_id INTEGER NOT NULL REFERENCES partidos(id) ON DELETE CASCADE,
+  equipo_id INTEGER NOT NULL REFERENCES equipos(id) ON DELETE CASCADE,
+  jugador_id INTEGER NOT NULL REFERENCES jugadores(id) ON DELETE CASCADE,
+  minuto INTEGER,
+  minuto_adicion INTEGER,
+  tiempo TEXT CHECK (tiempo IN ('primer_tiempo', 'segundo_tiempo')),
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Cuando el organizador/admin confirma que un jugador sancionado ya pagó el valor
 -- de la tarjeta, se registra aquí — habilita al jugador para el primer partido
 -- pendiente que le tocaba cumplir (o, si la sancion tiene partidos obligatorios

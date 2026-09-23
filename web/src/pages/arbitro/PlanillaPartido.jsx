@@ -654,7 +654,7 @@ function cronometroCorriendo(partido) {
 // React a desmontar y volver a montar TODAS las filas de los dos equipos en
 // cada acción — incluido el panel de cambio, que perdería su selección de
 // "quién sale" a mitad de camino.
-function FilaJugador({ jugador, enBanca, goles, tarjetas, enviando, puedeAnotarGol, soloLectura, modalidad, reglasCancha, onGol, onTarjeta }) {
+function FilaJugador({ jugador, enBanca, goles, tarjetas, faltas, enviando, puedeAnotarGol, soloLectura, modalidad, reglasCancha, onGol, onTarjeta, onFalta }) {
   const golesJugador = goles.filter((g) => g.jugador_id === jugador.id && !g.en_propia_puerta);
   const autogolesJugador = goles.filter((g) => g.jugador_id === jugador.id && g.en_propia_puerta);
   const amarillas = tarjetas.filter((t) => t.jugador_id === jugador.id && t.tipo === 'amarilla').length;
@@ -671,6 +671,8 @@ function FilaJugador({ jugador, enBanca, goles, tarjetas, enviando, puedeAnotarG
   // cronómetro esté corriendo.
   const sinGol = enviando || enBanca || bloqueado || !puedeAnotarGol;
   const sinTarjeta = enviando || bloqueado || soloLectura;
+  const faltasJugador = faltas ? faltas.filter((f) => f.jugador_id === jugador.id).length : 0;
+  const sinFalta = enviando || bloqueado || soloLectura;
 
   return (
     <div className={'planilla-jugador' + (enBanca ? ' planilla-jugador--banca' : '') + (bloqueado ? ' planilla-jugador--expulsado' : '')}>
@@ -688,6 +690,7 @@ function FilaJugador({ jugador, enBanca, goles, tarjetas, enviando, puedeAnotarG
         {amarillas > 0 && <span className="planilla-marca-tarjeta planilla-marca-tarjeta--amarilla">{amarillas}</span>}
         {roja && <span className="planilla-marca-tarjeta planilla-marca-tarjeta--roja" />}
         {azul && <span className="planilla-marca-tarjeta planilla-marca-tarjeta--azul" />}
+        {faltasJugador > 0 && <span className="planilla-marca-falta">🦵{faltasJugador}</span>}
       </span>
       <span className="planilla-jugador-acciones">
         <button type="button" title="Gol" onClick={() => onGol(jugador.id, false)} disabled={sinGol}>⚽</button>
@@ -695,7 +698,10 @@ function FilaJugador({ jugador, enBanca, goles, tarjetas, enviando, puedeAnotarG
         <button type="button" title="Tarjeta amarilla" className="planilla-btn-amarilla" onClick={() => onTarjeta(jugador.id, 'amarilla')} disabled={sinTarjeta}>🟨</button>
         <button type="button" title="Tarjeta roja" className="planilla-btn-roja" onClick={() => onTarjeta(jugador.id, 'roja')} disabled={sinTarjeta}>🟥</button>
         {permiteTarjetaAzul(modalidad) && (
-          <button type="button" title="Tarjeta azul (cambio obligatorio)" className="planilla-btn-azul" onClick={() => onTarjeta(jugador.id, 'azul')} disabled={sinTarjeta}>🟦</button>
+          <>
+            <button type="button" title="Tarjeta azul (cambio obligatorio)" className="planilla-btn-azul" onClick={() => onTarjeta(jugador.id, 'azul')} disabled={sinTarjeta}>🟦</button>
+            <button type="button" title="Falta personal" className="planilla-btn-falta" onClick={() => onFalta(jugador.id)} disabled={sinFalta}>🦵</button>
+          </>
         )}
       </span>
     </div>
@@ -757,20 +763,28 @@ function PanelCambio({ equipoNombre, enCancha, suplentes, enviando, jugadoresPor
 
 // Columna con todos los jugadores convocados de un equipo. Declarada fuera de
 // PlanillaEnVivo por la misma razón.
+const ETIQUETA_TIEMPO_FALTAS = { primer_tiempo: '1er tiempo', segundo_tiempo: '2do tiempo' };
+
 function ColumnaEquipo({
-  titulo, jugadores, usaAlineacion, idsEnCancha, goles, tarjetas, enviando,
-  puedeAnotarGol, soloLectura, modalidad, reglasCancha, onGol, onTarjeta
+  titulo, jugadores, usaAlineacion, idsEnCancha, goles, tarjetas, faltas, faltasEquipoTiempo, tiempoParaFaltas, enviando,
+  puedeAnotarGol, soloLectura, modalidad, reglasCancha, onGol, onTarjeta, onFalta
 }) {
   return (
     <section className="admin-card planilla-columna-equipo">
       <h2>{titulo}</h2>
+      {permiteTarjetaAzul(modalidad) && (
+        <p className={'planilla-faltas-equipo' + (faltasEquipoTiempo >= 5 ? ' planilla-faltas-equipo--acumulada' : '')}>
+          Faltas acumuladas ({ETIQUETA_TIEMPO_FALTAS[tiempoParaFaltas]}): {Math.min(faltasEquipoTiempo, 5)}/5
+          {faltasEquipoTiempo >= 5 && ' — el próximo tiro libre en contra es directo'}
+        </p>
+      )}
       <div className="planilla-jugadores-lista">
         {jugadores.map((j) => (
           <FilaJugador
             key={j.id} jugador={j} enBanca={usaAlineacion && !idsEnCancha.has(j.id)}
-            goles={goles} tarjetas={tarjetas} enviando={enviando} puedeAnotarGol={puedeAnotarGol}
+            goles={goles} tarjetas={tarjetas} faltas={faltas} enviando={enviando} puedeAnotarGol={puedeAnotarGol}
             soloLectura={soloLectura} modalidad={modalidad} reglasCancha={reglasCancha}
-            onGol={onGol} onTarjeta={onTarjeta}
+            onGol={onGol} onTarjeta={onTarjeta} onFalta={onFalta}
           />
         ))}
       </div>
@@ -780,7 +794,13 @@ function ColumnaEquipo({
 
 function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
   const modal = useModal();
-  const { partido, alineacion, goles, tarjetas, cambios, hitos, convocadosLocal, convocadosVisitante, reglasCancha } = datos;
+  const { partido, alineacion, goles, tarjetas, cambios, hitos, faltas, convocadosLocal, convocadosVisitante, reglasCancha } = datos;
+  // Mientras no arranque el 2do tiempo (o en el descanso), el conteo de faltas por
+  // equipo que se muestra sigue siendo el del 1er tiempo — apenas arranca el 2do,
+  // el filtro por `tiempo` hace que el contador vuelva a 0 solo.
+  const tiempoParaFaltas = partido.tiempo_actual === 'segundo_tiempo' ? 'segundo_tiempo' : 'primer_tiempo';
+  const faltasLocalTiempo = faltas.filter((f) => f.equipo_id === partido.equipo_local_id && f.tiempo === tiempoParaFaltas).length;
+  const faltasVisitanteTiempo = faltas.filter((f) => f.equipo_id === partido.equipo_visitante_id && f.tiempo === tiempoParaFaltas).length;
   const usaAlineacion = usaAlineacionFormal(partido.modalidad);
   const puedeAnotarGol = (partido.carga_retroactiva || cronometroCorriendo(partido)) && !soloLectura;
 
@@ -834,6 +854,26 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
       }
     } catch (err) {
       await modal.error(err.message, 'No se pudo registrar la tarjeta');
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function registrarFalta(jugadorId) {
+    setEnviando(true);
+    try {
+      const resultado = await api(`/planilla/${partido.id}/falta`, {
+        method: 'POST',
+        body: JSON.stringify({ jugador_id: jugadorId })
+      });
+      await onCambio();
+      if (resultado.expulsadoPorFaltas) {
+        await modal.error('El jugador acumuló 5 faltas: queda expulsado con tarjeta azul. Su equipo puede meter un suplente.', 'Expulsado por faltas');
+      } else if (resultado.equipoEnFaltaAcumulada) {
+        await modal.error('Este equipo llegó a 5 faltas en este tiempo: el próximo tiro libre en contra es directo, sin barrera.', 'Falta acumulada');
+      }
+    } catch (err) {
+      await modal.error(err.message, 'No se pudo registrar la falta');
     } finally {
       setEnviando(false);
     }
@@ -928,16 +968,18 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
         <ColumnaEquipo
           titulo={partido.equipo_local_nombre} jugadores={convocadosLocal}
           usaAlineacion={usaAlineacion && !partido.carga_retroactiva} idsEnCancha={idsEnCancha}
-          goles={goles} tarjetas={tarjetas} enviando={enviando} puedeAnotarGol={puedeAnotarGol}
+          goles={goles} tarjetas={tarjetas} faltas={faltas} faltasEquipoTiempo={faltasLocalTiempo} tiempoParaFaltas={tiempoParaFaltas}
+          enviando={enviando} puedeAnotarGol={puedeAnotarGol}
           soloLectura={soloLectura} modalidad={partido.modalidad} reglasCancha={reglasCancha}
-          onGol={registrarGol} onTarjeta={registrarTarjeta}
+          onGol={registrarGol} onTarjeta={registrarTarjeta} onFalta={registrarFalta}
         />
         <ColumnaEquipo
           titulo={partido.equipo_visitante_nombre} jugadores={convocadosVisitante}
           usaAlineacion={usaAlineacion && !partido.carga_retroactiva} idsEnCancha={idsEnCancha}
-          goles={goles} tarjetas={tarjetas} enviando={enviando} puedeAnotarGol={puedeAnotarGol}
+          goles={goles} tarjetas={tarjetas} faltas={faltas} faltasEquipoTiempo={faltasVisitanteTiempo} tiempoParaFaltas={tiempoParaFaltas}
+          enviando={enviando} puedeAnotarGol={puedeAnotarGol}
           soloLectura={soloLectura} modalidad={partido.modalidad} reglasCancha={reglasCancha}
-          onGol={registrarGol} onTarjeta={registrarTarjeta}
+          onGol={registrarGol} onTarjeta={registrarTarjeta} onFalta={registrarFalta}
         />
       </div>
 

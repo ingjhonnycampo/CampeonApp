@@ -171,8 +171,12 @@ router.get('/:id', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePa
     'SELECT * FROM partido_hitos WHERE partido_id = $1 ORDER BY id',
     [req.params.id]
   );
+  const { rows: faltas } = await pool.query(
+    'SELECT * FROM partido_faltas WHERE partido_id = $1 ORDER BY creado_en',
+    [req.params.id]
+  );
 
-  res.json({ partido, convocadosLocal, convocadosVisitante, alineacion, goles, tarjetas, cambios, hitos, reglasCancha });
+  res.json({ partido, convocadosLocal, convocadosVisitante, alineacion, goles, tarjetas, cambios, hitos, faltas, reglasCancha });
 }));
 
 // Confirma o corrige el número de camiseta que un jugador usa EN ESTE partido
@@ -563,6 +567,68 @@ router.delete('/:id/tarjeta/:tarjetaId', requireAuth, requireAccesoTorneo((req) 
   const { rows } = await pool.query('DELETE FROM partido_tarjetas WHERE id = $1 AND partido_id = $2 RETURNING *', [req.params.tarjetaId, req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'Esa tarjeta no existe' });
   res.json({ ok: true });
+}));
+
+// Falta personal acumulable (microfútbol/fútbol sala). Se cuenta para dos cosas
+// independientes: el total del JUGADOR en todo el partido (a la 5ta, tarjeta azul
+// automática — expulsado, pero su equipo puede meter suplente) y el total del
+// EQUIPO en el tiempo actual (a la 5ta, el próximo tiro libre en contra de ese
+// equipo es directo — esto no bloquea a nadie, solo se avisa).
+router.post('/:id/falta', requireAuth, requireAccesoTorneo((req) => obtenerTorneoIdDePartido(req.params.id)), soloArbitro, asyncHandler(async (req, res) => {
+  const { jugador_id } = req.body;
+
+  const { rows: partidoRows } = await pool.query(
+    `SELECT p.*, t.modalidad, t.duracion_tiempo_1, t.duracion_tiempo_2 FROM partidos p JOIN torneos t ON t.id = p.torneo_id WHERE p.id = $1`,
+    [req.params.id]
+  );
+  const partido = partidoRows[0];
+  if (!partido) return res.status(404).json({ error: 'Partido no encontrado' });
+  if (partido.estado !== 'en_curso') return res.status(400).json({ error: 'El partido tiene que estar en curso para anotar faltas' });
+  if (!permiteTarjetaAzul(partido.modalidad)) {
+    return res.status(400).json({ error: 'Las faltas acumulables solo aplican en microfútbol y fútbol sala' });
+  }
+
+  const { rows: jugadorRows } = await pool.query('SELECT * FROM jugadores WHERE id = $1', [jugador_id]);
+  const jugador = jugadorRows[0];
+  if (!jugador || ![partido.equipo_local_id, partido.equipo_visitante_id].includes(jugador.equipo_id)) {
+    return res.status(400).json({ error: 'El jugador debe pertenecer a uno de los dos equipos del partido' });
+  }
+  if (await estaExpulsado(req.params.id, jugador_id)) {
+    return res.status(400).json({ error: 'Este jugador ya fue expulsado y no puede seguir cometiendo faltas' });
+  }
+
+  const { minuto, minutoAdicion, tiempo } = minutoYTiempoActual(partido);
+  const { rows } = await pool.query(
+    `INSERT INTO partido_faltas (partido_id, equipo_id, jugador_id, minuto, minuto_adicion, tiempo) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [req.params.id, jugador.equipo_id, jugador_id, minuto, minutoAdicion, tiempo]
+  );
+  const falta = rows[0];
+
+  // 5ta falta del jugador en TODO el partido (no se reinicia por tiempo) -> tarjeta
+  // azul automática, igual que la doble amarilla genera la roja automática.
+  let expulsadoPorFaltas = false;
+  const { rows: countJugadorRows } = await pool.query(
+    `SELECT count(*) FROM partido_faltas WHERE partido_id = $1 AND jugador_id = $2`,
+    [req.params.id, jugador_id]
+  );
+  if (Number(countJugadorRows[0].count) === 5) {
+    await pool.query(
+      `INSERT INTO partido_tarjetas (partido_id, equipo_id, jugador_id, minuto, minuto_adicion, tiempo, tipo) VALUES ($1, $2, $3, $4, $5, $6, 'azul')`,
+      [req.params.id, jugador.equipo_id, jugador_id, minuto, minutoAdicion, tiempo]
+    );
+    expulsadoPorFaltas = true;
+  }
+
+  // 5ta falta del EQUIPO en este tiempo puntual (si se reinicia solo al cambiar de
+  // tiempo, porque se filtra por `tiempo`) -> aviso de tiro libre directo. Se avisa
+  // solo la vez que se cruza el umbral, no en cada falta siguiente.
+  const { rows: countEquipoRows } = await pool.query(
+    `SELECT count(*) FROM partido_faltas WHERE partido_id = $1 AND equipo_id = $2 AND tiempo = $3`,
+    [req.params.id, jugador.equipo_id, tiempo]
+  );
+  const equipoEnFaltaAcumulada = Number(countEquipoRows[0].count) === 5;
+
+  res.status(201).json({ ...falta, expulsadoPorFaltas, equipoEnFaltaAcumulada });
 }));
 
 // Cambio: el que sale queda con su minuto de salida, el que entra queda (o se
