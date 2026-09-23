@@ -24,7 +24,7 @@ function numero(n) {
 
 function EventoTexto({ ev }) {
   if (ev._tipo === 'gol') return <>⚽ {numero(ev.jugador_numero)}{ev.jugador_nombre || 'Jugador'}{ev.en_propia_puerta ? ' (en propia puerta)' : ''}</>;
-  if (ev._tipo === 'falta') return <>🦵 {numero(ev.jugador_numero)}{ev.jugador_nombre}</>;
+  if (ev._tipo === 'falta') return <>🦵 Falta de {numero(ev.jugador_numero)}{ev.jugador_nombre}</>;
   if (ev._tipo === 'cambio') {
     return (
       <>
