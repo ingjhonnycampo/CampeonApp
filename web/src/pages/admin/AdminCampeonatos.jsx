@@ -599,7 +599,8 @@ function FormularioEdicionEquipo({ equipo, onGuardar, onCancelar }) {
   const [form, setForm] = useState({
     nombre: equipo.nombre,
     delegado: equipo.delegado || '',
-    delegado_telefono: equipo.delegado_telefono || ''
+    delegado_telefono: equipo.delegado_telefono || '',
+    escudo_url: equipo.escudo_url || ''
   });
   const [guardando, setGuardando] = useState(false);
 
@@ -615,6 +616,7 @@ function FormularioEdicionEquipo({ equipo, onGuardar, onCancelar }) {
 
   return (
     <div className="admin-jugador-edicion">
+      <SubidaImagen etiqueta="Escudo del equipo" valor={form.escudo_url} onChange={(url) => setForm({ ...form, escudo_url: url })} />
       <label>Nombre del equipo
         <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
       </label>

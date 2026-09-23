@@ -40,7 +40,7 @@ router.patch('/:id', requireAuth, requireAccesoTorneo(async (req) => {
   const { rows } = await pool.query('SELECT torneo_id FROM equipos WHERE id = $1', [req.params.id]);
   return rows[0]?.torneo_id;
 }, ['organizador']), asyncHandler(async (req, res) => {
-  const { estado, nombre, delegado, delegado_telefono } = req.body;
+  const { estado, nombre, delegado, delegado_telefono, escudo_url } = req.body;
 
   const actual = (await pool.query('SELECT * FROM equipos WHERE id = $1', [req.params.id])).rows[0];
   if (!actual) return res.status(404).json({ error: 'Equipo no encontrado' });
@@ -53,12 +53,13 @@ router.patch('/:id', requireAuth, requireAccesoTorneo(async (req) => {
   }
 
   const { rows } = await pool.query(
-    `UPDATE equipos SET estado = $1, nombre = $2, delegado = $3, delegado_telefono = $4 WHERE id = $5 RETURNING *`,
+    `UPDATE equipos SET estado = $1, nombre = $2, delegado = $3, delegado_telefono = $4, escudo_url = $5 WHERE id = $6 RETURNING *`,
     [
       estado ?? actual.estado,
       nombre !== undefined ? nombre.trim() : actual.nombre,
       delegado !== undefined ? (delegado || null) : actual.delegado,
       delegado_telefono !== undefined ? (delegado_telefono || null) : actual.delegado_telefono,
+      escudo_url !== undefined ? (escudo_url || null) : actual.escudo_url,
       req.params.id
     ]
   );
@@ -69,10 +70,10 @@ router.patch('/:id', requireAuth, requireAccesoTorneo(async (req) => {
       torneoId: rows[0].torneo_id, usuarioId: req.usuario.id,
       accion: `${verbo} el equipo "${rows[0].nombre}"`
     });
-  } else if (nombre !== undefined || delegado !== undefined || delegado_telefono !== undefined) {
+  } else if (nombre !== undefined || delegado !== undefined || delegado_telefono !== undefined || escudo_url !== undefined) {
     await registrar(pool, {
       torneoId: rows[0].torneo_id, usuarioId: req.usuario.id,
-      accion: `Editó los datos del equipo "${rows[0].nombre}" (nombre/delegado/teléfono)`
+      accion: `Editó los datos del equipo "${rows[0].nombre}" (nombre/delegado/teléfono/escudo)`
     });
   }
 
