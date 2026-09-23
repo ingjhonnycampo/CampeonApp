@@ -149,6 +149,31 @@ router.patch('/:id/horario', requireAuth, requireAccesoTorneo(async (req) => {
     return res.status(400).json({ error: 'Este partido ya se jugó, no se puede reprogramar' });
   }
 
+  // Cada partido ocupa 1 hora de cancha. Si ya hay otro partido (de cualquier
+  // campeonato — comparten cancha) cuyo horario le cae encima, no se deja
+  // programar: se compara el inicio de ambos y si quedan a menos de 1 hora de
+  // diferencia, se solapan. No se compara contra partidos ya jugados (esa hora
+  // ya pasó) ni contra el propio partido que se está editando.
+  if (fecha_hora) {
+    const { rows: cruces } = await pool.query(
+      `SELECT p.id, l.nombre AS local, v.nombre AS visitante, p.fecha_hora, t.nombre AS torneo_nombre
+       FROM partidos p
+       JOIN equipos l ON l.id = p.equipo_local_id
+       JOIN equipos v ON v.id = p.equipo_visitante_id
+       JOIN torneos t ON t.id = p.torneo_id
+       WHERE p.id != $1 AND p.fecha_hora IS NOT NULL AND p.estado != 'jugado'
+         AND ABS(EXTRACT(EPOCH FROM (p.fecha_hora - $2::timestamptz))) < 3600`,
+      [req.params.id, fecha_hora]
+    );
+    if (cruces[0]) {
+      const c = cruces[0];
+      const horaCruce = new Date(c.fecha_hora).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' });
+      return res.status(400).json({
+        error: `Ese horario se cruza con ${c.local} vs ${c.visitante} (${c.torneo_nombre}), programado para ${horaCruce}. Cada partido ocupa 1 hora de cancha.`
+      });
+    }
+  }
+
   // Si ya tenía una fecha programada y se le pone una distinta, queda marcado como
   // "reprogramado" para que se note que cambió; si es la primera vez, queda "programado".
   const nuevaEstado = actual.fecha_hora && fecha_hora ? 'reprogramado' : 'programado';
