@@ -574,9 +574,30 @@ const ETIQUETA_TIEMPO = {
   finalizado: 'Tiempo cumplido'
 };
 
-function Cronometro({ partido, onCambio, soloLectura }) {
+// Cuánto tiempo real lleva corriendo el descanso — no es el cronómetro del
+// partido (ese se reinicia en 0 para el segundo tiempo), sino un contador aparte
+// desde que terminó el primer tiempo, para que el árbitro sepa cuánto lleva
+// esperando y decida cuándo arrancar el segundo tiempo.
+function useCronometroDescanso(partido, hitos) {
+  const [ahora, setAhora] = useState(Date.now());
+  const enDescanso = partido.tiempo_actual === 'descanso';
+
+  useEffect(() => {
+    if (!enDescanso) return;
+    const id = setInterval(() => setAhora(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [enDescanso]);
+
+  if (!enDescanso) return null;
+  const finPrimerTiempo = hitos.find((h) => h.tipo === 'fin_primer_tiempo');
+  if (!finPrimerTiempo) return null;
+  return Math.max(0, Math.floor((ahora - new Date(finPrimerTiempo.creado_en).getTime()) / 1000));
+}
+
+function Cronometro({ partido, hitos, onCambio, soloLectura }) {
   const modal = useModal();
   const { totalSeg, corriendo } = useCronometro(partido);
+  const segundosDescanso = useCronometroDescanso(partido, hitos);
   const [enviando, setEnviando] = useState(false);
   const duracionMin = partido.tiempo_actual === 'segundo_tiempo' ? partido.duracion_tiempo_2 : partido.duracion_tiempo_1;
   const duracionSeg = (duracionMin || 0) * 60;
@@ -603,6 +624,12 @@ function Cronometro({ partido, onCambio, soloLectura }) {
         <span className="planilla-cronometro-adicion">+ {formatoReloj(segAdicion)}</span>
       )}
       {cumplido && <span className="planilla-cronometro-aviso">¡Se cumplió el tiempo reglamentario ({duracionMin}')! Corriendo tiempo de adición.</span>}
+      {segundosDescanso != null && (
+        <div className="planilla-cronometro-descanso">
+          <span className="planilla-cronometro-etiqueta">Tiempo de descanso</span>
+          <span className="planilla-cronometro-reloj">{formatoReloj(segundosDescanso)}</span>
+        </div>
+      )}
       {!corriendo && (
         <span className="planilla-cronometro-nota">
           {partido.tiempo_actual == null && 'Todavía se pueden mostrar tarjetas, pero los goles solo se anotan con el cronómetro corriendo.'}
@@ -774,7 +801,7 @@ function ColumnaEquipo({
       <h2>{titulo}</h2>
       {permiteTarjetaAzul(modalidad) && (
         <p className={'planilla-faltas-equipo' + (faltasEquipoTiempo >= 5 ? ' planilla-faltas-equipo--acumulada' : '')}>
-          Faltas acumuladas ({ETIQUETA_TIEMPO_FALTAS[tiempoParaFaltas]}): {Math.min(faltasEquipoTiempo, 5)}/5
+          Faltas acumuladas ({ETIQUETA_TIEMPO_FALTAS[tiempoParaFaltas]}): {faltasEquipoTiempo}/5
           {faltasEquipoTiempo >= 5 && ' — el próximo tiro libre en contra es directo'}
         </p>
       )}
@@ -962,7 +989,7 @@ function PlanillaEnVivo({ datos, onCambio, soloLectura }) {
           </p>
         </section>
       ) : (
-        <Cronometro partido={partido} onCambio={onCambio} soloLectura={soloLectura} />
+        <Cronometro partido={partido} hitos={hitos} onCambio={onCambio} soloLectura={soloLectura} />
       )}
 
       <div className="planilla-equipos-grid">
