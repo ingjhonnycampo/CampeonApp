@@ -27,6 +27,7 @@ import ImprimirCuadro from './pages/admin/ImprimirCuadro';
 import ImprimirPlanillaInscripcion from './pages/admin/ImprimirPlanillaInscripcion';
 import ImprimirSanciones from './pages/admin/ImprimirSanciones';
 import ImprimirEstadisticas from './pages/admin/ImprimirEstadisticas';
+import ImprimirProgramacionDia from './pages/admin/ImprimirProgramacionDia';
 import AdminBitacora from './pages/admin/AdminBitacora';
 import AdminEstadisticasUso from './pages/admin/AdminEstadisticasUso';
 import ArbitroDashboard from './pages/arbitro/ArbitroDashboard';
@@ -69,6 +70,7 @@ export default function App() {
             <Route path="/admin/imprimir/inscripcion/:torneoId" element={<RutaProtegida roles={['admin', 'organizador']}><ImprimirPlanillaInscripcion /></RutaProtegida>} />
             <Route path="/admin/imprimir/sanciones/:torneoId" element={<RutaProtegida roles={['admin', 'organizador']}><ImprimirSanciones /></RutaProtegida>} />
             <Route path="/admin/imprimir/estadisticas/:torneoId" element={<RutaProtegida roles={['admin', 'organizador']}><ImprimirEstadisticas /></RutaProtegida>} />
+            <Route path="/admin/imprimir/programacion/:torneoId" element={<RutaProtegida roles={['admin', 'organizador']}><ImprimirProgramacionDia /></RutaProtegida>} />
             <Route path="/admin/bitacora" element={<RutaProtegida roles={['admin']}><AdminBitacora /></RutaProtegida>} />
             <Route path="/admin/estadisticas-uso" element={<RutaProtegida roles={['admin']}><AdminEstadisticasUso /></RutaProtegida>} />
             <Route path="/arbitro" element={<RutaProtegida roles={['admin', 'organizador', 'arbitro']}><ArbitroDashboard /></RutaProtegida>} />

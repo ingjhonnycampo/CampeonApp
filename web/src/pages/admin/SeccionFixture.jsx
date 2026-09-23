@@ -134,6 +134,9 @@ export default function SeccionFixture({ torneo, onCambio }) {
         <Link to={`/admin/imprimir/estadisticas/${torneo.id}`} target="_blank" className="subida-imagen-btn">
           Imprimir goleadores y estadísticas
         </Link>
+        <Link to={`/admin/imprimir/programacion/${torneo.id}`} target="_blank" className="subida-imagen-btn">
+          Imprimir programación por día
+        </Link>
         <Link to={`/en-vivo/${torneo.slug}`} className="subida-imagen-btn">
           Ver resultados en vivo (público)
         </Link>
