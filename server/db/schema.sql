@@ -30,6 +30,10 @@ CREATE TABLE IF NOT EXISTS torneos (
   nombre TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
   modalidad TEXT NOT NULL CHECK (modalidad IN ('futbol', 'futbol9', 'futbol7', 'microfutbol', 'futbolsala')),
+  -- Para diferenciar campeonatos de la misma modalidad que comparten cancha (ej.
+  -- "HOMBRES" y "MUJERES" corriendo al tiempo) — se usa al imprimir la
+  -- programación combinada de varios campeonatos en un solo día.
+  genero TEXT CHECK (genero IN ('masculino', 'femenino', 'mixto')),
   duracion_tiempo_1 INTEGER NOT NULL DEFAULT 45,
   duracion_tiempo_2 INTEGER NOT NULL DEFAULT 45,
   fecha_inicio DATE,

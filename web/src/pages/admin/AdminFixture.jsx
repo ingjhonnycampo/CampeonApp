@@ -5,6 +5,7 @@ import { useModal } from '../../context/ModalContext';
 import { useConfiguracion } from '../../context/ConfiguracionContext';
 import { api } from '../../lib/api';
 import { calcularEstadoCampeonato } from '../../lib/estadoCampeonato';
+import { Link } from 'react-router-dom';
 import PieFirma from '../../components/PieFirma';
 import PanelHeader from '../../components/PanelHeader';
 import EstadoCampeonato from '../../components/EstadoCampeonato';
@@ -69,6 +70,9 @@ export default function AdminFixture() {
         <div className="admin-fixture-stack">
           <section className="admin-card">
             <h2>Campeonatos</h2>
+            <Link to="/admin/imprimir/programacion-general" target="_blank" className="subida-imagen-btn" style={{ marginBottom: 10, display: 'inline-block' }}>
+              Imprimir programación por día (varios campeonatos)
+            </Link>
             <div className="admin-list admin-list--alta">
               {torneos.length === 0 && <p className="admin-empty">Todavía no hay campeonatos.</p>}
               {torneos.map((t) => (

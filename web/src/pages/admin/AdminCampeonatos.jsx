@@ -237,8 +237,10 @@ const SUGERIDOS_POR_MODALIDAD = {
   futbolsala: { min_jugadores: 7, max_jugadores: 10 }
 };
 
+const ETIQUETA_GENERO = { masculino: 'Masculino', femenino: 'Femenino', mixto: 'Mixto' };
+
 const FORM_VACIO = {
-  nombre: '', modalidad: 'futbol', duracion_tiempo_1: 45, duracion_tiempo_2: 45, logo_url: '',
+  nombre: '', modalidad: 'futbol', genero: '', duracion_tiempo_1: 45, duracion_tiempo_2: 45, logo_url: '',
   fecha_inicio: '', fecha_fin: '', inscripciones_desde: '', inscripciones_hasta: '', organizador: '', telefono_organizador: '',
   grupo_whatsapp: '', reglamento_url: '',
   ...SUGERIDOS_POR_MODALIDAD.futbol
@@ -295,7 +297,7 @@ function SeccionCampeonatos({ torneos, activo, onSelect, onGuardar, puedeCrear }
     setError('');
     setEditandoId(t.id);
     setForm({
-      nombre: t.nombre, modalidad: t.modalidad, duracion_tiempo_1: t.duracion_tiempo_1, duracion_tiempo_2: t.duracion_tiempo_2,
+      nombre: t.nombre, modalidad: t.modalidad, genero: t.genero || '', duracion_tiempo_1: t.duracion_tiempo_1, duracion_tiempo_2: t.duracion_tiempo_2,
       logo_url: t.logo_url || '', fecha_inicio: t.fecha_inicio ? t.fecha_inicio.slice(0, 10) : '',
       fecha_fin: t.fecha_fin ? t.fecha_fin.slice(0, 10) : '',
       inscripciones_desde: paraInput(t.inscripciones_desde), inscripciones_hasta: paraInput(t.inscripciones_hasta),
@@ -348,7 +350,10 @@ function SeccionCampeonatos({ torneos, activo, onSelect, onGuardar, puedeCrear }
             {t.logo_url ? <img src={t.logo_url} alt="" className="admin-item-logo" /> : <span className="admin-item-logo admin-item-logo--vacio" />}
             <span>
               <strong>{t.nombre}</strong>
-              <small>{nombreModalidad(t.modalidad)} — {t.duracion_tiempo_1}'+{t.duracion_tiempo_2}'</small>
+              <small>
+                {nombreModalidad(t.modalidad)} — {t.duracion_tiempo_1}'+{t.duracion_tiempo_2}'
+                {t.genero && ` · ${ETIQUETA_GENERO[t.genero]}`}
+              </small>
             </span>
             <EstadoCampeonato estado={calcularEstadoCampeonato(t)} />
           </button>
@@ -380,15 +385,25 @@ function SeccionCampeonatos({ torneos, activo, onSelect, onGuardar, puedeCrear }
         <label>Nombre
           <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Liga del Barrio 2026" required />
         </label>
-        <label>Modalidad
-          <select value={form.modalidad} onChange={(e) => {
-            const modalidad = e.target.value;
-            setForm({ ...form, modalidad, ...SUGERIDOS_POR_MODALIDAD[modalidad] });
-            setReglasSancion(reglasSancionVacias(modalidad));
-          }}>
-            {MODALIDADES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-          </select>
-        </label>
+        <div className="admin-form-row">
+          <label>Modalidad
+            <select value={form.modalidad} onChange={(e) => {
+              const modalidad = e.target.value;
+              setForm({ ...form, modalidad, ...SUGERIDOS_POR_MODALIDAD[modalidad] });
+              setReglasSancion(reglasSancionVacias(modalidad));
+            }}>
+              {MODALIDADES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+          </label>
+          <label>Género
+            <select value={form.genero} onChange={(e) => setForm({ ...form, genero: e.target.value })}>
+              <option value="">Sin indicar</option>
+              <option value="masculino">Masculino</option>
+              <option value="femenino">Femenino</option>
+              <option value="mixto">Mixto</option>
+            </select>
+          </label>
+        </div>
         <div className="admin-form-row">
           <label>Tiempo 1 (min)
             <input type="number" value={form.duracion_tiempo_1} onChange={(e) => setForm({ ...form, duracion_tiempo_1: e.target.value })} />

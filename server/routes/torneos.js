@@ -188,7 +188,7 @@ router.get('/:id/sorteos', requireAuth, requireAccesoTorneo((req) => req.params.
 
 router.post('/', requireAuth, requireRole('admin'), asyncHandler(async (req, res) => {
   const {
-    nombre, modalidad, duracion_tiempo_1, duracion_tiempo_2, fecha_inicio, fecha_fin, logo_url,
+    nombre, modalidad, genero, duracion_tiempo_1, duracion_tiempo_2, fecha_inicio, fecha_fin, logo_url,
     inscripciones_desde, inscripciones_hasta, max_jugadores, min_jugadores, organizador, telefono_organizador,
     grupo_whatsapp, reglamento_url, reglas, reglas_sancion
   } = req.body;
@@ -199,13 +199,16 @@ router.post('/', requireAuth, requireRole('admin'), asyncHandler(async (req, res
   if (!MODALIDADES_VALIDAS.includes(modalidad)) {
     return res.status(400).json({ error: `modalidad debe ser una de: ${MODALIDADES_VALIDAS.join(', ')}` });
   }
+  if (genero !== undefined && genero !== null && genero !== '' && !['masculino', 'femenino', 'mixto'].includes(genero)) {
+    return res.status(400).json({ error: 'genero debe ser masculino, femenino o mixto' });
+  }
 
   const slug = await generarSlugUnico(nombre);
 
   const { rows } = await pool.query(
-    `INSERT INTO torneos (nombre, slug, modalidad, duracion_tiempo_1, duracion_tiempo_2, fecha_inicio, fecha_fin, logo_url, inscripciones_desde, inscripciones_hasta, max_jugadores, min_jugadores, organizador, telefono_organizador, grupo_whatsapp, reglamento_url)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *`,
-    [nombre, slug, modalidad, duracion_tiempo_1 || 45, duracion_tiempo_2 || 45, fecha_inicio || null, fecha_fin || null,
+    `INSERT INTO torneos (nombre, slug, modalidad, genero, duracion_tiempo_1, duracion_tiempo_2, fecha_inicio, fecha_fin, logo_url, inscripciones_desde, inscripciones_hasta, max_jugadores, min_jugadores, organizador, telefono_organizador, grupo_whatsapp, reglamento_url)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING *`,
+    [nombre, slug, modalidad, genero || null, duracion_tiempo_1 || 45, duracion_tiempo_2 || 45, fecha_inicio || null, fecha_fin || null,
      logo_url || null, inscripciones_desde || null, inscripciones_hasta || null, max_jugadores || 10, min_jugadores || 7,
      organizador || null, telefono_organizador || null, grupo_whatsapp || null, reglamento_url || null]
   );
@@ -231,7 +234,7 @@ router.post('/', requireAuth, requireRole('admin'), asyncHandler(async (req, res
 
 router.patch('/:id', requireAuth, requireAccesoTorneo((req) => req.params.id, ['organizador']), asyncHandler(async (req, res) => {
   const {
-    nombre, modalidad, duracion_tiempo_1, duracion_tiempo_2, fecha_inicio, fecha_fin, logo_url,
+    nombre, modalidad, genero, duracion_tiempo_1, duracion_tiempo_2, fecha_inicio, fecha_fin, logo_url,
     inscripciones_desde, inscripciones_hasta, max_jugadores, min_jugadores, organizador, telefono_organizador,
     grupo_whatsapp, reglamento_url, reglas, reglas_sancion
   } = req.body;
@@ -242,14 +245,17 @@ router.patch('/:id', requireAuth, requireAccesoTorneo((req) => req.params.id, ['
   if (!MODALIDADES_VALIDAS.includes(modalidad)) {
     return res.status(400).json({ error: `modalidad debe ser una de: ${MODALIDADES_VALIDAS.join(', ')}` });
   }
+  if (genero !== undefined && genero !== null && genero !== '' && !['masculino', 'femenino', 'mixto'].includes(genero)) {
+    return res.status(400).json({ error: 'genero debe ser masculino, femenino o mixto' });
+  }
 
   const { rows } = await pool.query(
-    `UPDATE torneos SET nombre = $1, modalidad = $2, duracion_tiempo_1 = $3, duracion_tiempo_2 = $4,
-       fecha_inicio = $5, fecha_fin = $6, logo_url = $7, inscripciones_desde = $8, inscripciones_hasta = $9,
-       max_jugadores = $10, min_jugadores = $11, organizador = $12, telefono_organizador = $13, grupo_whatsapp = $14,
-       reglamento_url = $15
-     WHERE id = $16 RETURNING *`,
-    [nombre, modalidad, duracion_tiempo_1 || 45, duracion_tiempo_2 || 45, fecha_inicio || null, fecha_fin || null,
+    `UPDATE torneos SET nombre = $1, modalidad = $2, genero = $3, duracion_tiempo_1 = $4, duracion_tiempo_2 = $5,
+       fecha_inicio = $6, fecha_fin = $7, logo_url = $8, inscripciones_desde = $9, inscripciones_hasta = $10,
+       max_jugadores = $11, min_jugadores = $12, organizador = $13, telefono_organizador = $14, grupo_whatsapp = $15,
+       reglamento_url = $16
+     WHERE id = $17 RETURNING *`,
+    [nombre, modalidad, genero || null, duracion_tiempo_1 || 45, duracion_tiempo_2 || 45, fecha_inicio || null, fecha_fin || null,
      logo_url || null, inscripciones_desde || null, inscripciones_hasta || null, max_jugadores || 10, min_jugadores || 7,
      organizador || null, telefono_organizador || null, grupo_whatsapp || null, reglamento_url || null, req.params.id]
   );
