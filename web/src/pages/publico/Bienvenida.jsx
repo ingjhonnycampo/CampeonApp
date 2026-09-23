@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PieFirma from '../../components/PieFirma';
-import { api } from '../../lib/api';
 import { registrarVisita } from '../../lib/visitas';
 
 const OPCIONES = [
@@ -45,15 +44,7 @@ const OPCIONES = [
 ];
 
 export default function Bienvenida() {
-  const [torneos, setTorneos] = useState([]);
-
   useEffect(() => { registrarVisita('inicio'); }, []);
-
-  useEffect(() => {
-    api('/publico/torneos')
-      .then((lista) => setTorneos(lista.filter((t) => t.estado !== 'finalizado')))
-      .catch(() => { /* el atajo es un extra: si falla, el inicio sigue funcionando igual */ });
-  }, []);
 
   return (
     <div className="bienvenida-page">
@@ -73,20 +64,6 @@ export default function Bienvenida() {
           </Link>
         ))}
       </div>
-
-      {torneos.length > 0 && (
-        <div className="bienvenida-campeonatos">
-          <h2>Consulta la información de tu campeonato</h2>
-          {torneos.map((t) => (
-            <Link key={t.id} to={`/en-vivo/${t.slug}`} className="publico-torneo-banda">
-              {t.logo_url ? <img src={t.logo_url} alt="" /> : <span className="publico-torneo-banda-logo-vacio" />}
-              <span className="publico-torneo-banda-info">
-                <span className="publico-torneo-banda-nombre">{t.nombre}</span>
-              </span>
-            </Link>
-          ))}
-        </div>
-      )}
 
       <PieFirma />
     </div>
