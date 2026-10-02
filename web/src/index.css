@@ -3696,6 +3696,26 @@ h1, h2, h3 {
   margin: 20px 0 8px;
 }
 
+.publico-en-vivo-fecha-grupo {
+  margin-top: 14px;
+}
+
+.publico-en-vivo-fecha-titulo {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-strong);
+  margin: 0 0 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.publico-en-vivo-fecha-dia {
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+  text-transform: capitalize;
+  margin: 6px 0 2px;
+}
+
 .publico-en-vivo-seccion--vivo {
   display: flex;
   align-items: center;

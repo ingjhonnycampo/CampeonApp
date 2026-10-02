@@ -11,6 +11,21 @@ import CuadroBracket from '../../components/CuadroBracket';
 import { registrarVisita } from '../../lib/visitas';
 import { restriccionSancion } from '../../lib/sanciones';
 
+// Agrupa los partidos de una fecha/jornada por el día calendario real en que se
+// jugaron (jugado_hasta, o fecha_hora si no quedó esa marca) — casi siempre es un
+// solo grupo, pero si alguno se jugó después (ej. se reprogramó o se cargó
+// retroactivo) queda aparte con su propio encabezado de día.
+function agruparPorDia(partidos) {
+  const grupos = new Map();
+  for (const p of partidos) {
+    const fecha = p.jugado_hasta || p.fecha_hora;
+    const clave = fecha ? new Date(fecha).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' }) : '';
+    if (!grupos.has(clave)) grupos.set(clave, []);
+    grupos.get(clave).push(p);
+  }
+  return [...grupos.entries()];
+}
+
 function TablaGoleadores({ goleadores }) {
   if (goleadores.length === 0) return <p className="admin-empty">Todavía no hay goles registrados.</p>;
   return (
@@ -278,7 +293,16 @@ export default function PartidosPublico() {
   const enVivo = partidos.filter((p) => p.estado === 'en_curso');
   const deHoy = partidos.filter((p) => p.estado !== 'en_curso' && p.estado !== 'jugado' && esHoy(p));
   const jugados = partidos.filter((p) => p.estado === 'jugado')
-    .sort((a, b) => new Date(b.jugado_hasta || b.fecha_hora || 0) - new Date(a.jugado_hasta || a.fecha_hora || 0));
+    .sort((a, b) => new Date(a.jugado_hasta || a.fecha_hora || 0) - new Date(b.jugado_hasta || b.fecha_hora || 0));
+  // Agrupados por jornada (Fecha 1, Fecha 2...) en vez de una sola lista — dentro
+  // de cada fecha se indica el día calendario real en que se jugó cada partido
+  // (puede variar entre partidos de la misma fecha si alguno se jugó después).
+  const jugadosPorJornada = new Map();
+  jugados.forEach((p) => {
+    if (!jugadosPorJornada.has(p.jornada)) jugadosPorJornada.set(p.jornada, []);
+    jugadosPorJornada.get(p.jornada).push(p);
+  });
+  const jornadasJugadas = [...jugadosPorJornada.keys()].sort((a, b) => a - b);
 
   return (
     <div className="publico-partido-page">
@@ -334,11 +358,21 @@ export default function PartidosPublico() {
 
           <h2 className="publico-en-vivo-seccion">Ya jugados</h2>
           {jugados.length === 0 && <p className="admin-empty">Todavía no hay partidos jugados.</p>}
-          {jugados.map((p) => (
-            <FilaPartidoPublico
-              key={p.id} partido={p} abierto={estaAbierto(p.id)} onAbrir={alternarAbierto}
-              fijado={estaFijado(p.id)} onFijar={alternarFijado} onEvento={anunciar}
-            />
+          {jornadasJugadas.map((j) => (
+            <div key={j} className="publico-en-vivo-fecha-grupo">
+              <h3 className="publico-en-vivo-fecha-titulo">Fecha {j}</h3>
+              {agruparPorDia(jugadosPorJornada.get(j)).map(([diaTexto, partidosDelDia]) => (
+                <div key={diaTexto}>
+                  {diaTexto && <p className="publico-en-vivo-fecha-dia">{diaTexto}</p>}
+                  {partidosDelDia.map((p) => (
+                    <FilaPartidoPublico
+                      key={p.id} partido={p} abierto={estaAbierto(p.id)} onAbrir={alternarAbierto}
+                      fijado={estaFijado(p.id)} onFijar={alternarFijado} onEvento={anunciar}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
           ))}
         </div>
       )}
