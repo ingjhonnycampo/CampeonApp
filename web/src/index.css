@@ -4636,3 +4636,16 @@ h1, h2, h3 {
 @media print {
   .programacion-flyer { box-shadow: none; border: 1px solid var(--line); }
 }
+
+.admin-disponibilidad {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-disponibilidad h2 {
+  margin: 0 0 4px;
+}

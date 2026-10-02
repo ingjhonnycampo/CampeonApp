@@ -1,4 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { api } from '../../lib/api';
+import { useModal } from '../../context/ModalContext';
+import { useConfiguracion } from '../../context/ConfiguracionContext';
 import { useAuth } from '../../context/AuthContext';
 import PieFirma from '../../components/PieFirma';
 import PanelHeader from '../../components/PanelHeader';
@@ -105,10 +109,56 @@ const SECCIONES = [
 
 export default function AdminDashboard() {
   const { usuario } = useAuth();
+  const modal = useModal();
+  const { plataformaDisponible, refrescar } = useConfiguracion();
+  const [guardando, setGuardando] = useState(false);
+
+  async function alternarDisponibilidad() {
+    const apagar = plataformaDisponible;
+    const confirmado = await modal.confirmar({
+      titulo: apagar ? '¿Apagar la plataforma?' : '¿Encender la plataforma?',
+      mensaje: apagar
+        ? 'Nadie más podrá entrar: ni el público, ni organizadores, árbitros o delegados. Todos verán un aviso de mantenimiento. Solo tú, como administrador, seguirás usándola.'
+        : 'La plataforma vuelve a estar disponible para el público y para todos los usuarios.',
+      textoAceptar: apagar ? 'Apagar' : 'Encender',
+      peligro: apagar
+    });
+    if (!confirmado) return;
+    setGuardando(true);
+    try {
+      await api('/configuracion/disponibilidad', { method: 'PATCH', body: JSON.stringify({ plataforma_disponible: !apagar }) });
+      await refrescar();
+    } catch (err) {
+      await modal.error(err.message, 'No se pudo cambiar la disponibilidad');
+    } finally {
+      setGuardando(false);
+    }
+  }
 
   return (
     <div className="admin-panel">
       <PanelHeader titulo="Panel de administración" eyebrow />
+
+      {usuario.rol === 'admin' && (
+        <section className="admin-card admin-disponibilidad">
+          <div>
+            <h2>Disponibilidad de la plataforma</h2>
+            <p className="admin-ayuda">
+              {plataformaDisponible
+                ? 'Encendida: el público y todos los usuarios pueden entrar.'
+                : 'Apagada: solo tú puedes entrar. Todos los demás ven un aviso de mantenimiento.'}
+            </p>
+          </div>
+          <div className="admin-form-linea">
+            <span className={'admin-estado ' + (plataformaDisponible ? 'admin-estado--aprobado' : 'admin-estado--rechazado')}>
+              {plataformaDisponible ? 'Encendida' : 'Apagada'}
+            </span>
+            <button type="button" className={plataformaDisponible ? 'admin-btn-mal' : 'admin-btn-ok'} onClick={alternarDisponibilidad} disabled={guardando}>
+              {guardando ? 'Guardando...' : plataformaDisponible ? 'Apagar' : 'Encender'}
+            </button>
+          </div>
+        </section>
+      )}
 
       <div className="admin-secciones">
         {SECCIONES.filter((s) => !s.soloAdmin || usuario.rol === 'admin').map((s) => (

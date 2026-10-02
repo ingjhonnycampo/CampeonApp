@@ -7,8 +7,11 @@
 -- código ni redesplegar.
 CREATE TABLE IF NOT EXISTS configuracion_global (
   id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-  transmision_habilitada BOOLEAN NOT NULL DEFAULT false
+  transmision_habilitada BOOLEAN NOT NULL DEFAULT false,
+  -- Interruptor general (modo mantenimiento): si es false, solo el admin puede usar la plataforma.
+  plataforma_disponible BOOLEAN NOT NULL DEFAULT true
 );
+ALTER TABLE configuracion_global ADD COLUMN IF NOT EXISTS plataforma_disponible BOOLEAN NOT NULL DEFAULT true;
 INSERT INTO configuracion_global (id, transmision_habilitada) VALUES (1, false) ON CONFLICT (id) DO NOTHING;
 ALTER TABLE configuracion_global ENABLE ROW LEVEL SECURITY;
 

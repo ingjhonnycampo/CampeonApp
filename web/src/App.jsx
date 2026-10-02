@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ModalProvider } from './context/ModalContext';
-import { ConfiguracionProvider } from './context/ConfiguracionContext';
+import { ConfiguracionProvider, useConfiguracion } from './context/ConfiguracionContext';
+import PlataformaEnMantenimiento from './components/PlataformaEnMantenimiento';
 import InstalarApp from './components/InstalarApp';
 import RutaProtegida from './components/RutaProtegida';
 import CargaJugador from './components/CargaJugador';
@@ -45,12 +46,25 @@ function Inicio() {
   return <Navigate to={destino} replace />;
 }
 
+// Si el admin apagó la plataforma, todos ven el aviso de mantenimiento menos él;
+// /login queda abierto para que pueda entrar y volver a encenderla.
+function PuertaMantenimiento({ children }) {
+  const { plataformaDisponible, cargando: cargandoConfig } = useConfiguracion();
+  const { usuario, cargando: cargandoSesion } = useAuth();
+  const { pathname } = useLocation();
+  if (plataformaDisponible || cargandoConfig || pathname === '/login') return children;
+  if (cargandoSesion) return <CargaJugador />;
+  if (usuario?.rol === 'admin') return children;
+  return <PlataformaEnMantenimiento />;
+}
+
 export default function App() {
   return (
     <ModalProvider>
       <AuthProvider>
         <ConfiguracionProvider>
           <BrowserRouter>
+            <PuertaMantenimiento>
             <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/inscripciones" element={<InscripcionesAbiertas />} />
@@ -84,6 +98,7 @@ export default function App() {
             <Route path="/delegado" element={<RutaProtegida roles={['delegado']}><DashboardPlaceholder /></RutaProtegida>} />
             <Route path="/" element={<Inicio />} />
             </Routes>
+            </PuertaMantenimiento>
             <InstalarApp />
           </BrowserRouter>
         </ConfiguracionProvider>

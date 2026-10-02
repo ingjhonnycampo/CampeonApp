@@ -32,6 +32,7 @@ const planillaRouter = require('./routes/planilla');
 const sancionesRouter = require('./routes/sanciones');
 const configuracionRouter = require('./routes/configuracion');
 const estadisticasUsoRouter = require('./routes/estadisticasUso');
+const { verificarDisponibilidad } = require('./middleware/mantenimiento');
 
 const app = express();
 const server = http.createServer(app);
@@ -47,6 +48,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
+app.use('/api', verificarDisponibilidad);
 app.get('/api/salud', (req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRouter);
 app.use('/api/torneos', torneosRouter);
